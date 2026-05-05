@@ -161,6 +161,19 @@ pytest -W ignore::RuntimeWarning
 | 7    | 包括レポート + 再現可能 notebook | これから |
 | 8    | 発信・公開                       | これから |
 
+## FAQ
+
+公開直後によく聞かれそうな質問への回答は [docs/FAQ.md](docs/FAQ.md) に集約しています。
+
+例:「ポジションサイズを小さくすれば 100x OK では?」→ rf=0.05 でも生存率 0%。
+   「ナイーブ戦略しか試してないのでは?」→ trend_filtered_sma を追加して
+   1x〜3x で正の log-return を確認、ただし 25x 以上では同様に死。
+
+## このプロジェクトはどう作られたか
+
+[docs/how_claude_built_this.md](docs/how_claude_built_this.md) — Claude Code
+と共同作業の正直な記録。何を AI が、何を人間がやったか。
+
 ## 限界と今後の問い
 
 - 検証は Binance USDT-M Perp **BTC/USDT のみ**(他通貨・他取引所は未検証)
