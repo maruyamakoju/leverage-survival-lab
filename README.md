@@ -154,11 +154,27 @@ lsl-trade replay --start 2024-01-01 --end 2024-02-01
 ### Live モード — Binance のリアル価格 (仮想金)
 
 ```bash
-lsl-trade live --poll 5         # 5秒ごとに ticker fetch
+lsl-trade live --poll 5         # 5秒ごとに ticker fetch (CLI)
 ```
 
+### Web GUI モード(身銭切ってる感) ⭐
+
+```bash
+lsl-web                         # http://127.0.0.1:8765 を開く
+```
+
+Binance のリアル価格 WebSocket を購読(サブ秒更新)、ブラウザで:
+
+- 大きく光る現在価格(緑↑/赤↓のフラッシュ)
+- equity・PnL の即時更新
+- 清算距離ゲージ(近づくと赤くなる)
+- Long / Short / Close の大型ボタン
+- SL/TP 入力欄
+- 取引履歴テーブル
+- 清算時に画面ロックする 💀 モーダル
+- 不可能な組合せ(例: 100x × 100% size)は事前 reject 表示
+
 エンジンは研究と同じ `LeverageEngine`。**清算は intra-bar 判定、SL/TP は自動執行**。
-100倍 × 100% size のような不可能な組合せは事前に reject(実取引所と同じ挙動)。
 
 ## 使い方
 

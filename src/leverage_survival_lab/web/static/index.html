@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Leverage Survival Lab — Paper Trading</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="root">
+
+  <header>
+    <div class="brand">
+      <div class="title">Leverage Survival Lab</div>
+      <div class="subtitle">仮想金で BTC をバンバン触る — Binance USDT-M Perp ライブ価格</div>
+    </div>
+    <div class="conn">
+      <span id="conn-dot" class="dot offline"></span>
+      <span id="conn-text">connecting…</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Price + chart -->
+    <section class="card price-card">
+      <div class="row">
+        <div class="symbol">BTC/USDT</div>
+        <div id="price" class="price">—</div>
+        <div id="price-change" class="change">—</div>
+      </div>
+      <canvas id="price-chart" height="120"></canvas>
+      <div class="ts" id="ts">—</div>
+    </section>
+
+    <!-- Account -->
+    <section class="card account-card">
+      <div class="row">
+        <div class="label">Equity</div>
+        <div id="equity" class="big">$ —</div>
+        <div id="pnl" class="pnl">—</div>
+      </div>
+      <div class="bar"><div id="liq-bar" class="bar-fill"></div></div>
+      <div class="row sub">
+        <div>Initial: <span id="init-eq">—</span></div>
+        <div>Unrealized: <span id="unr">—</span></div>
+        <div>Trades: <span id="n-trades">0</span></div>
+        <div>Liq: <span id="n-liq">0</span></div>
+      </div>
+    </section>
+
+    <!-- Position -->
+    <section class="card position-card" id="position-card">
+      <div class="label">Position</div>
+      <div id="pos-display" class="pos-flat">FLAT — no position</div>
+      <div id="pos-detail" class="row sub" style="display:none;">
+        <div>Qty: <span id="pos-qty"></span></div>
+        <div>Entry: <span id="pos-entry"></span></div>
+        <div>Lev: <span id="pos-lev"></span></div>
+        <div>Liq: <span id="pos-liq"></span> <small id="pos-liq-dist"></small></div>
+      </div>
+    </section>
+
+    <!-- Trade controls -->
+    <section class="card controls-card">
+      <div class="row controls-row">
+        <label>Size%
+          <input id="inp-size" type="number" min="1" max="100" step="1" value="50">
+        </label>
+        <label>Lev
+          <input id="inp-lev" type="number" min="1" max="125" step="1" value="10">
+        </label>
+        <label>SL%
+          <input id="inp-sl" type="number" min="0" max="50" step="0.1" placeholder="off">
+        </label>
+        <label>TP%
+          <input id="inp-tp" type="number" min="0" max="100" step="0.1" placeholder="off">
+        </label>
+        <button id="btn-set-sl" class="btn-mini">Set SL</button>
+        <button id="btn-set-tp" class="btn-mini">Set TP</button>
+        <button id="btn-clear-sl" class="btn-mini">Clear SL</button>
+        <button id="btn-clear-tp" class="btn-mini">Clear TP</button>
+      </div>
+      <div class="row controls-row big-buttons">
+        <button id="btn-long" class="btn-long">▲ LONG</button>
+        <button id="btn-close" class="btn-close">CLOSE</button>
+        <button id="btn-short" class="btn-short">▼ SHORT</button>
+      </div>
+      <div id="precheck" class="precheck">—</div>
+      <div id="last-msg" class="last-msg">—</div>
+    </section>
+
+    <!-- Trade history -->
+    <section class="card history-card">
+      <div class="label">Recent trades</div>
+      <table id="trades-table">
+        <thead>
+          <tr><th>time</th><th>action</th><th>price</th><th>qty</th><th>lev</th><th>pnl</th></tr>
+        </thead>
+        <tbody id="trades-body"></tbody>
+      </table>
+    </section>
+
+    <!-- Reset -->
+    <section class="card reset-card">
+      <details>
+        <summary>セッションリセット</summary>
+        <div class="row" style="margin-top:8px;">
+          <label>Initial equity ($)
+            <input id="reset-eq" type="number" min="1000" step="1000" value="1000000">
+          </label>
+          <button id="btn-reset" class="btn-mini">Reset</button>
+        </div>
+      </details>
+    </section>
+
+  </main>
+
+  <!-- Liquidation modal -->
+  <div id="liq-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>💀 LIQUIDATED</h2>
+      <p id="liq-text">Position closed at liquidation price.</p>
+      <button id="liq-ok" class="btn-mini">OK</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
