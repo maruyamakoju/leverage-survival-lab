@@ -65,6 +65,8 @@ class AITrader:
         self.stopped = False
         # tick が来てる証跡を残す(debug)
         self.last_heartbeat_tick = 0
+        # WS state.pos が None を連続で見た回数(SL/TP/清算 検知用)
+        self._null_pos_streak: int = 0
 
     # ---- helpers ----
     def _zscore(self) -> float:
@@ -102,21 +104,40 @@ class AITrader:
 
     # ---- decision ----
     def _decide(self, state: dict[str, Any]) -> tuple[str, str] | None:
-        """次のアクションを決定。"""
-        cfg = self.cfg
-        pos = state["position"]
+        """次のアクションを決定。
 
-        # 既にポジションがある場合 → 時間切れチェック
-        if pos is not None:
-            # position_opened_at 未設定なら今を起点にする(再起動時のリカバリ)
-            if self.position_opened_at is None:
-                self.position_opened_at = self.tick_idx
+        重要: state["position"] は WebSocket ブロードキャスト由来でラグがあるため、
+        bot 内部の `position_opened_at` を「自分が建玉している」の真値として使う。
+        state.position が連続 N ティック None を見せたら SL/TP/清算 で閉じたとみなす。
+        """
+        cfg = self.cfg
+        state_pos = state["position"]
+
+        # 自分の認識でポジションがあるなら
+        if self.position_opened_at is not None:
+            # state が「ポジなし」を 3t 連続で見せたら → SL/TP/清算 で閉じた
+            if state_pos is None:
+                self._null_pos_streak += 1
+                if self._null_pos_streak >= 3:
+                    self.position_opened_at = None
+                    self._null_pos_streak = 0
+                    self.last_trade_tick = self.tick_idx  # cooldown 開始
+                return None
+            else:
+                self._null_pos_streak = 0
+
             held_ticks = self.tick_idx - self.position_opened_at
             if held_ticks >= cfg.hold_max_ticks:
                 return ("close", f"保有 {held_ticks}t (上限 {cfg.hold_max_ticks}t) 超過")
             return None
 
-        # cooldown 中?
+        # ノーポジ(自分の認識上)
+        # state.pos が予期せずポジションを示してたら(再起動 + 既存ポジ)→ 引き継ぐ
+        if state_pos is not None:
+            self.position_opened_at = self.tick_idx
+            return None
+
+        # cooldown
         if self.tick_idx - self.last_trade_tick < cfg.cooldown_ticks:
             return None
 
