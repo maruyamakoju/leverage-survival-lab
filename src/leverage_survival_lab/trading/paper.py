@@ -92,15 +92,14 @@ class PaperBroker:
         mm = maintenance_margin_rate(notional)
         if mm >= 1.0 / lev:
             max_lev = int(1.0 / mm)
-            return (f"!! REJECTED: notional ${notional:,.0f} requires mm={mm*100:.1f}% "
-                    f"which exceeds 1/{lev:.0f}={1.0/lev*100:.2f}%. "
-                    f"At this size, max leverage is ~{max_lev}x. "
-                    f"Reduce 'size' or 'lev'.")
+            return (f"⚠️ 取引拒否: 想定元本 ${notional:,.0f} は維持証拠金 {mm*100:.2f}% を要求し、"
+                    f"1/{lev:.0f}倍 = {1.0/lev*100:.2f}% を超えます。"
+                    f"このサイズでは最大 {max_lev}倍 まで。サイズかレバを下げてください。")
         return None
 
     def long(self, size_pct: float | None = None, leverage: float | None = None) -> str:
         if self.engine.position is not None:
-            return "already in position; close first"
+            return "既にポジションがあります。先に決済してください。"
         L = leverage if leverage is not None else self.default_leverage
         rf = size_pct if size_pct is not None else self.default_size_pct
         warn = self._pre_check(L, rf)
@@ -109,16 +108,17 @@ class PaperBroker:
         try:
             self.engine.open(side=Side.LONG, price=self.last_price, leverage=L, risk_fraction=rf)
         except (RuntimeError, ValueError) as e:
-            return f"error: {e}"
+            return f"エラー: {e}"
         pos = self.engine.position
         assert pos is not None
         self._record("open_long", self.last_price, pos.qty, L,
                      note=f"liq={pos.liq_price:.2f}")
-        return f"opened LONG {pos.qty:.6f} @ {self.last_price:.2f}, lev={L}x, liq={pos.liq_price:.2f}"
+        return (f"買建 {pos.qty:.6f} BTC @ ${self.last_price:,.2f}、"
+                f"レバ {L:.0f}倍、清算価格 ${pos.liq_price:,.2f}")
 
     def short(self, size_pct: float | None = None, leverage: float | None = None) -> str:
         if self.engine.position is not None:
-            return "already in position; close first"
+            return "既にポジションがあります。先に決済してください。"
         L = leverage if leverage is not None else self.default_leverage
         rf = size_pct if size_pct is not None else self.default_size_pct
         warn = self._pre_check(L, rf)
@@ -127,37 +127,45 @@ class PaperBroker:
         try:
             self.engine.open(side=Side.SHORT, price=self.last_price, leverage=L, risk_fraction=rf)
         except (RuntimeError, ValueError) as e:
-            return f"error: {e}"
+            return f"エラー: {e}"
         pos = self.engine.position
         assert pos is not None
         self._record("open_short", self.last_price, pos.qty, L,
                      note=f"liq={pos.liq_price:.2f}")
-        return f"opened SHORT {pos.qty:.6f} @ {self.last_price:.2f}, lev={L}x, liq={pos.liq_price:.2f}"
+        return (f"売建 {pos.qty:.6f} BTC @ ${self.last_price:,.2f}、"
+                f"レバ {L:.0f}倍、清算価格 ${pos.liq_price:,.2f}")
 
     def close(self) -> str:
         if self.engine.position is None:
-            return "no open position"
+            return "ポジションがありません"
         pos = self.engine.position
-        side, qty, lev = pos.side.value, pos.qty, pos.leverage
+        side_jp = "買い" if pos.side.value == "long" else "売り"
+        qty, lev = pos.qty, pos.leverage
         net = self.engine.close(price=self.last_price)
         self._record("close", self.last_price, qty, lev, pnl=net)
-        return f"closed {side.upper()} {qty:.6f} @ {self.last_price:.2f}, pnl={net:+.2f}"
+        sign = "+" if net >= 0 else ""
+        return (f"{side_jp}決済 {qty:.6f} BTC @ ${self.last_price:,.2f}、"
+                f"損益 {sign}${net:,.2f}")
 
     def set_sl(self, pct: float | None) -> str:
         self.sl_pct = pct
-        return f"stop loss = {pct*100:.2f}%" if pct is not None else "stop loss cleared"
+        if pct is None:
+            return "損切クリア"
+        return f"損切設定: {pct*100:.2f}%"
 
     def set_tp(self, pct: float | None) -> str:
         self.tp_pct = pct
-        return f"take profit = {pct*100:.2f}%" if pct is not None else "take profit cleared"
+        if pct is None:
+            return "利確クリア"
+        return f"利確設定: +{pct*100:.2f}%"
 
     def set_leverage(self, lev: float) -> str:
         self.default_leverage = lev
-        return f"default leverage = {lev}x"
+        return f"既定レバ = {lev:.0f}倍"
 
     def set_size(self, size_pct: float) -> str:
         self.default_size_pct = size_pct
-        return f"default size = {size_pct*100:.0f}%"
+        return f"既定サイズ = {size_pct*100:.0f}%"
 
     # ---- tick processing ----
     def tick(self, *, price: float, high: float | None = None, low: float | None = None,
@@ -176,7 +184,7 @@ class PaperBroker:
                 qty, lev = pos.qty, pos.leverage
                 self.engine.force_liquidate()
                 self._record("liquidated", liq_p, qty, lev, pnl=-pos.initial_margin)
-                msgs.append(f"!! LIQUIDATED at {liq_p:.2f}, equity now {self.equity:.2f}")
+                msgs.append(f"💀 清算 @ ${liq_p:,.2f}、残高 ${self.equity:,.2f}")
             else:
                 # 2) SL
                 if self.sl_pct is not None:
@@ -186,7 +194,8 @@ class PaperBroker:
                     if hit:
                         net = self.engine.close(price=sl_price, is_stop=True)
                         self._record("stop_loss", sl_price, pos.qty, pos.leverage, pnl=net)
-                        msgs.append(f"~ SL hit at {sl_price:.2f}, pnl={net:+.2f}")
+                        sign = "+" if net >= 0 else ""
+                        msgs.append(f"🛑 損切ヒット @ ${sl_price:,.2f}、損益 {sign}${net:,.2f}")
                 # 3) TP
                 if self.tp_pct is not None and self.engine.position is not None:
                     pos2 = self.engine.position
@@ -196,7 +205,8 @@ class PaperBroker:
                     if hit_tp:
                         net = self.engine.close(price=tp_price)
                         self._record("take_profit", tp_price, pos2.qty, pos2.leverage, pnl=net)
-                        msgs.append(f"+ TP hit at {tp_price:.2f}, pnl={net:+.2f}")
+                        sign = "+" if net >= 0 else ""
+                        msgs.append(f"🎯 利確ヒット @ ${tp_price:,.2f}、損益 {sign}${net:,.2f}")
 
         # tick record
         pos = self.engine.position

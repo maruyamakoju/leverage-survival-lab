@@ -10,13 +10,19 @@ let lastPrice = null;
 const priceHistory = [];   // {ts, price}
 const MAX_PRICE_HISTORY = 240;
 
+const STATUS_LABEL = { online: "接続済", offline: "切断", connecting: "接続中…" };
+const ACTION_LABEL = {
+  open_long: "買建", open_short: "売建", close: "決済",
+  liquidated: "清算", stop_loss: "損切", take_profit: "利確",
+};
+
 const conn = {
   ws: null,
   status: "offline",
   setStatus(s) {
     this.status = s;
     $("conn-dot").className = "dot " + s;
-    $("conn-text").innerText = s;
+    $("conn-text").innerText = STATUS_LABEL[s] || s;
   },
 };
 
@@ -59,14 +65,14 @@ function applyState(s) {
     while (priceHistory.length > MAX_PRICE_HISTORY) priceHistory.shift();
     drawChart();
   }
-  $("ts").innerText = s.ts ? `last update: ${s.ts}` : "—";
+  $("ts").innerText = s.ts ? `最終更新: ${s.ts}` : "—";
 
   // Price change vs first chart point
   if (priceHistory.length > 1) {
     const first = priceHistory[0].price;
     const ch = (s.price / first - 1) * 100;
     const el = $("price-change");
-    el.innerText = `${ch >= 0 ? "+" : ""}${ch.toFixed(2)}% (${priceHistory.length} ticks)`;
+    el.innerText = `${ch >= 0 ? "+" : ""}${ch.toFixed(2)}% (${priceHistory.length} ティック)`;
     el.classList.toggle("up", ch >= 0);
     el.classList.toggle("down", ch < 0);
   }
@@ -90,19 +96,19 @@ function applyState(s) {
     const isLong = pos.side === "long";
     $("pos-display").className = isLong ? "pos-long" : "pos-short";
     $("pos-display").innerText =
-      `${isLong ? "▲ LONG" : "▼ SHORT"} ${pos.qty.toFixed(6)} BTC @ $${fmt(pos.entry, 2)}  •  ${pos.leverage.toFixed(0)}x`;
+      `${isLong ? "▲ 買い" : "▼ 売り"} ${pos.qty.toFixed(6)} BTC @ $${fmt(pos.entry, 2)}  •  ${pos.leverage.toFixed(0)}倍`;
     $("pos-detail").style.display = "flex";
     $("pos-qty").innerText = pos.qty.toFixed(6);
     $("pos-entry").innerText = fmtMoney(pos.entry);
-    $("pos-lev").innerText = pos.leverage.toFixed(0) + "x";
+    $("pos-lev").innerText = pos.leverage.toFixed(0) + "倍";
     $("pos-liq").innerText = fmtMoney(pos.liq_price);
-    $("pos-liq-dist").innerText = `(${pos.liq_distance_pct.toFixed(2)}% away)`;
+    $("pos-liq-dist").innerText = `(現値から ${pos.liq_distance_pct.toFixed(2)}%)`;
     // liq-bar: 0% (close to liq, danger) to 100% (far from liq, safe)
     const dist = Math.min(pos.liq_distance_pct, 10);
     $("liq-bar").style.width = (dist / 10 * 100).toFixed(0) + "%";
   } else {
     $("pos-display").className = "pos-flat";
-    $("pos-display").innerText = "FLAT — no position";
+    $("pos-display").innerText = "ノーポジ";
     $("pos-detail").style.display = "none";
     $("liq-bar").style.width = "100%";
   }
@@ -113,12 +119,13 @@ function applyState(s) {
   for (const t of (s.trades_recent || []).slice().reverse()) {
     const tr = document.createElement("tr");
     const ts = (t.ts || "").split("T")[1]?.slice(0, 8) || "—";
+    const actionLabel = ACTION_LABEL[t.action] || t.action;
     tr.innerHTML = `
       <td>${ts}</td>
-      <td class="action ${t.action}">${t.action}</td>
+      <td class="action ${t.action}">${actionLabel}</td>
       <td>${fmt(t.price)}</td>
       <td>${(t.qty ?? 0).toFixed(6)}</td>
-      <td>${(t.leverage ?? 0).toFixed(0)}x</td>
+      <td>${(t.leverage ?? 0).toFixed(0)}倍</td>
       <td class="${t.pnl == null ? "" : (t.pnl >= 0 ? "pnl-pos" : "pnl-neg")}">${t.pnl == null ? "—" : fmtSigned(t.pnl, 2)}</td>`;
     tbody.appendChild(tr);
   }
@@ -129,8 +136,8 @@ function applyState(s) {
     $("last-msg").innerText = ev.message;
   } else if (ev && ev.messages && ev.messages.length) {
     $("last-msg").innerText = ev.messages.join(" · ");
-    if (ev.messages.some((m) => m.includes("LIQUIDATED"))) {
-      showLiqModal(ev.messages.filter((m) => m.includes("LIQUIDATED"))[0]);
+    if (ev.messages.some((m) => m.includes("清算"))) {
+      showLiqModal(ev.messages.filter((m) => m.includes("清算"))[0]);
     }
   }
 
@@ -207,12 +214,12 @@ async function precheck() {
     const el = $("precheck");
     if (r.ok) {
       el.className = "precheck ok";
-      el.innerText = `notional $${fmt(r.notional, 0)} (mm ${(r.mm * 100).toFixed(2)}% < 1/lev ${(100 / lev).toFixed(2)}%) — OK`;
+      el.innerText = `想定元本 $${fmt(r.notional, 0)} (維持証拠金 ${(r.mm * 100).toFixed(2)}% < 1/レバ ${(100 / lev).toFixed(2)}%) — 発注可能`;
       $("btn-long").disabled = false;
       $("btn-short").disabled = false;
     } else {
       el.className = "precheck warn";
-      el.innerText = `!! REJECTED: notional $${fmt(r.notional, 0)} requires mm ${(r.mm * 100).toFixed(2)}% but 1/lev=${(100 / lev).toFixed(2)}%. At this size, max lev ≈ ${r.max_lev_at_size}x.`;
+      el.innerText = `⚠️ この組合せは取引所が拒否します(想定元本 $${fmt(r.notional, 0)}、必要証拠金 ${(r.mm * 100).toFixed(2)}% > 1/レバ ${(100 / lev).toFixed(2)}%)。このサイズなら最大 ${r.max_lev_at_size}倍 まで。`;
       $("btn-long").disabled = true;
       $("btn-short").disabled = true;
     }
@@ -256,7 +263,7 @@ function bindButtons() {
   $("btn-reset").onclick = async () => {
     const eq = parseFloat($("reset-eq").value);
     const r = await api("/reset", { equity: eq, leverage: parseFloat($("inp-lev").value), size_pct: parseFloat($("inp-size").value) });
-    $("last-msg").innerText = r.message || "reset";
+    $("last-msg").innerText = r.message || "リセット完了";
     priceHistory.length = 0;
   };
   // Update default lev/size when inputs change
