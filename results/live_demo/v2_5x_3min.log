@@ -1,0 +1,109 @@
+{"ts": "2026-05-05T16:36:13.079324+00:00", "action": "START", "config": {"leverage": 5.0, "size_pct": 0.3, "sl_pct": 1.5, "tp_pct": 3.0}}
+HTTP Request: POST http://127.0.0.1:8765/api/sl "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/tp "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/short "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:36:16.796096+00:00", "action": "open_short", "reason": "平均回帰: z=+1.66 > 1.5", "price": 81282.33, "lev": 5.0, "size": 0.3, "ok": true, "result": "売建 18.453825 BTC @ $81,283.96、レバ 5倍、清算価格 $95,508.65"}
+{"ts": "2026-05-05T16:36:21.042762+00:00", "action": "HEARTBEAT", "tick": 200, "price": 81282.11, "pos": true, "equity": 998650.0, "total": 998684.1395768613}
+{"ts": "2026-05-05T16:36:41.646607+00:00", "action": "HEARTBEAT", "tick": 400, "price": 81267.04, "pos": true, "equity": 998650.0, "total": 998962.2387245899}
+{"ts": "2026-05-05T16:37:01.413152+00:00", "action": "HEARTBEAT", "tick": 600, "price": 81248.85, "pos": true, "equity": 998650.0, "total": 999297.9138073489}
+{"ts": "2026-05-05T16:37:11.854152+00:00", "action": "HEARTBEAT", "tick": 800, "price": 81238.41, "pos": true, "equity": 998650.0, "total": 999490.571743798}
+{"ts": "2026-05-05T16:37:12.344281+00:00", "action": "HEARTBEAT", "tick": 1000, "price": 81214.0, "pos": true, "equity": 998650.0, "total": 999941.0296201122}
+{"ts": "2026-05-05T16:37:15.111631+00:00", "action": "HEARTBEAT", "tick": 1200, "price": 81194.41, "pos": true, "equity": 998650.0, "total": 1000302.5400583338}
+{"ts": "2026-05-05T16:37:18.131030+00:00", "action": "HEARTBEAT", "tick": 1400, "price": 81180.0, "pos": true, "equity": 998650.0, "total": 1000568.4596813443}
+{"ts": "2026-05-05T16:37:20.969567+00:00", "action": "HEARTBEAT", "tick": 1600, "price": 81163.64, "pos": true, "equity": 998650.0, "total": 1000870.3642637491}
+{"ts": "2026-05-05T16:37:27.674657+00:00", "action": "HEARTBEAT", "tick": 1800, "price": 81163.46, "pos": true, "equity": 998650.0, "total": 1000873.6859523085}
+HTTP Request: POST http://127.0.0.1:8765/api/close "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:37:30.085853+00:00", "action": "close", "reason": "保有 1800t (上限 1800t) 超過", "price": 81160.0, "result": "売り決済 18.453825 BTC @ $81,160.00、損益 +$939.59"}
+HTTP Request: POST http://127.0.0.1:8765/api/sl "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/tp "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/long "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:37:30.952991+00:00", "action": "open_long", "reason": "平均回帰: z=-1.90 < -1.5", "price": 81155.42, "lev": 5.0, "size": 0.3, "ok": true, "result": "買建 18.476247 BTC @ $81,152.00、レバ 5倍、清算価格 $66,950.40"}
+{"ts": "2026-05-05T16:37:30.962598+00:00", "action": "HEARTBEAT", "tick": 2000, "price": 81145.52, "pos": true, "equity": 998240.1490173105, "total": 998120.422937077}
+{"ts": "2026-05-05T16:37:33.354845+00:00", "action": "HEARTBEAT", "tick": 2200, "price": 81131.01, "pos": true, "equity": 998240.1490173105, "total": 997852.3325938378}
+{"ts": "2026-05-05T16:37:46.199431+00:00", "action": "HEARTBEAT", "tick": 2400, "price": 81130.01, "pos": true, "equity": 998240.1490173105, "total": 997833.8563468881}
+{"ts": "2026-05-05T16:38:02.792583+00:00", "action": "HEARTBEAT", "tick": 2600, "price": 81162.36, "pos": true, "equity": 998240.1490173105, "total": 998431.5629357086}
+{"ts": "2026-05-05T16:38:11.361575+00:00", "action": "HEARTBEAT", "tick": 2800, "price": 81147.22, "pos": true, "equity": 998240.1490173105, "total": 998151.8325568913}
+{"ts": "2026-05-05T16:38:14.644641+00:00", "action": "HEARTBEAT", "tick": 3000, "price": 81120.6, "pos": true, "equity": 998240.1490173105, "total": 997659.9948630924}
+{"ts": "2026-05-05T16:38:15.716095+00:00", "action": "HEARTBEAT", "tick": 3200, "price": 81102.51, "pos": true, "equity": 998240.1490173105, "total": 997325.7595557736}
+{"ts": "2026-05-05T16:38:20.016498+00:00", "action": "HEARTBEAT", "tick": 3400, "price": 81103.43, "pos": true, "equity": 998240.1490173105, "total": 997342.7577029672}
+{"ts": "2026-05-05T16:38:24.912778+00:00", "action": "HEARTBEAT", "tick": 3600, "price": 81095.38, "pos": true, "equity": 998240.1490173105, "total": 997194.023915023}
+HTTP Request: POST http://127.0.0.1:8765/api/close "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:38:26.232104+00:00", "action": "close", "reason": "保有 1800t (上限 1800t) 超過", "price": 81107.3, "result": "買い決済 18.476247 BTC @ $81,108.54、損益 $-2,151.70"}
+{"ts": "2026-05-05T16:38:29.019080+00:00", "action": "HEARTBEAT", "tick": 3800, "price": 81123.21, "pos": false, "equity": 996088.4480515927, "total": 996088.4480515927}
+HTTP Request: POST http://127.0.0.1:8765/api/sl "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/tp "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/long "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:38:30.433709+00:00", "action": "open_long", "reason": "平均回帰: z=-1.70 < -1.5", "price": 81116.96, "lev": 5.0, "size": 0.3, "ok": true, "result": "買建 18.419906 BTC @ $81,115.11、レバ 5倍、清算価格 $66,919.97"}
+{"ts": "2026-05-05T16:38:39.598429+00:00", "action": "HEARTBEAT", "tick": 4000, "price": 81144.19, "pos": true, "equity": 994743.7286467231, "total": 995279.3795026982}
+{"ts": "2026-05-05T16:38:49.829332+00:00", "action": "HEARTBEAT", "tick": 4200, "price": 81164.51, "pos": true, "equity": 994743.7286467231, "total": 995653.6719852776}
+{"ts": "2026-05-05T16:38:55.420292+00:00", "action": "HEARTBEAT", "tick": 4400, "price": 81126.63, "pos": true, "equity": 994743.7286467231, "total": 994955.9259596816}
+{"ts": "2026-05-05T16:38:55.821712+00:00", "action": "HEARTBEAT", "tick": 4600, "price": 81094.0, "pos": true, "equity": 994743.7286467231, "total": 994354.8844386889}
+{"ts": "2026-05-05T16:38:59.873948+00:00", "action": "HEARTBEAT", "tick": 4800, "price": 81082.87, "pos": true, "equity": 994743.7286467231, "total": 994149.8708889295}
+{"ts": "2026-05-05T16:39:04.904431+00:00", "action": "HEARTBEAT", "tick": 5000, "price": 81077.22, "pos": true, "equity": 994743.7286467231, "total": 994045.7984220706}
+{"ts": "2026-05-05T16:39:15.119276+00:00", "action": "HEARTBEAT", "tick": 5200, "price": 81084.65, "pos": true, "equity": 994743.7286467231, "total": 994182.6583209664}
+{"ts": "2026-05-05T16:39:24.546754+00:00", "action": "HEARTBEAT", "tick": 5400, "price": 81113.04, "pos": true, "equity": 994743.7286467231, "total": 994705.5994420507}
+{"ts": "2026-05-05T16:39:42.346540+00:00", "action": "HEARTBEAT", "tick": 5600, "price": 81127.16, "pos": true, "equity": 994743.7286467231, "total": 994965.6885096702}
+HTTP Request: POST http://127.0.0.1:8765/api/close "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:39:49.244178+00:00", "action": "close", "reason": "保有 1800t (上限 1800t) 超過", "price": 81132.07, "result": "買い決済 18.419906 BTC @ $81,132.07、損益 $-1,032.60"}
+HTTP Request: POST http://127.0.0.1:8765/api/sl "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/tp "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/short "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:39:58.119386+00:00", "action": "open_short", "reason": "平均回帰: z=+2.22 > 1.5", "price": 81132.82, "lev": 5.0, "size": 0.3, "ok": true, "result": "売建 18.371892 BTC @ $81,133.00、レバ 5倍、清算価格 $95,331.28"}
+{"ts": "2026-05-05T16:40:00.866510+00:00", "action": "HEARTBEAT", "tick": 5800, "price": 81112.63, "pos": true, "equity": 992369.6196549791, "total": 992743.8550902195}
+{"ts": "2026-05-05T16:40:10.073922+00:00", "action": "HEARTBEAT", "tick": 6000, "price": 81076.22, "pos": true, "equity": 992369.6196549791, "total": 993412.775669361}
+{"ts": "2026-05-05T16:40:34.991604+00:00", "action": "HEARTBEAT", "tick": 6200, "price": 81076.21, "pos": true, "equity": 992369.6196549791, "total": 993412.9593882785}
+{"ts": "2026-05-05T16:40:59.149714+00:00", "action": "HEARTBEAT", "tick": 6400, "price": 81065.95, "pos": true, "equity": 992369.6196549791, "total": 993601.4549977813}
+{"ts": "2026-05-05T16:41:08.219592+00:00", "action": "HEARTBEAT", "tick": 6600, "price": 81070.0, "pos": true, "equity": 992369.6196549791, "total": 993527.0488361355}
+{"ts": "2026-05-05T16:41:23.072709+00:00", "action": "HEARTBEAT", "tick": 6800, "price": 81083.27, "pos": true, "equity": 992369.6196549791, "total": 993283.253832422}
+{"ts": "2026-05-05T16:41:39.674261+00:00", "action": "HEARTBEAT", "tick": 7000, "price": 81123.78, "pos": true, "equity": 992369.6196549791, "total": 992539.0084970468}
+{"ts": "2026-05-05T16:42:00.706738+00:00", "action": "HEARTBEAT", "tick": 7200, "price": 81112.45, "pos": true, "equity": 992369.6196549791, "total": 992747.1620307373}
+{"ts": "2026-05-05T16:42:12.479227+00:00", "action": "HEARTBEAT", "tick": 7400, "price": 81150.0, "pos": true, "equity": 992369.6196549791, "total": 992057.2974949845}
+HTTP Request: POST http://127.0.0.1:8765/api/close "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:42:19.100762+00:00", "action": "close", "reason": "保有 1800t (上限 1800t) 超過", "price": 81130.55, "result": "売り決済 18.371892 BTC @ $81,128.62、損益 $-1,260.97"}
+HTTP Request: POST http://127.0.0.1:8765/api/sl "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/tp "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/long "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:42:26.250096+00:00", "action": "open_long", "reason": "平均回帰: z=-3.93 < -1.5", "price": 81126.0, "lev": 5.0, "size": 0.3, "ok": true, "result": "買建 18.325471 BTC @ $81,125.50、レバ 5倍、清算価格 $66,928.54"}
+{"ts": "2026-05-05T16:42:29.199916+00:00", "action": "HEARTBEAT", "tick": 7600, "price": 81120.53, "pos": true, "equity": 989770.6542590704, "total": 989679.5766694994}
+{"ts": "2026-05-05T16:42:40.064644+00:00", "action": "HEARTBEAT", "tick": 7800, "price": 81120.09, "pos": true, "equity": 989770.6542590704, "total": 989671.5134623743}
+{"ts": "2026-05-05T16:42:48.339743+00:00", "action": "HEARTBEAT", "tick": 8000, "price": 81121.72, "pos": true, "equity": 989770.6542590704, "total": 989701.3839796784}
+{"ts": "2026-05-05T16:43:03.429127+00:00", "action": "HEARTBEAT", "tick": 8200, "price": 81100.0, "pos": true, "equity": 989770.6542590704, "total": 989303.3547552354}
+{"ts": "2026-05-05T16:43:21.740437+00:00", "action": "HEARTBEAT", "tick": 8400, "price": 81105.94, "pos": true, "equity": 989770.6542590704, "total": 989412.2080514228}
+{"ts": "2026-05-05T16:43:41.266661+00:00", "action": "HEARTBEAT", "tick": 8600, "price": 81078.92, "pos": true, "equity": 989770.6542590704, "total": 988917.053832065}
+{"ts": "2026-05-05T16:44:25.422915+00:00", "action": "HEARTBEAT", "tick": 8800, "price": 81087.72, "pos": true, "equity": 989770.6542590704, "total": 989078.317974565}
+{"ts": "2026-05-05T16:44:40.581588+00:00", "action": "HEARTBEAT", "tick": 9000, "price": 81080.01, "pos": true, "equity": 989770.6542590704, "total": 988937.02859517}
+{"ts": "2026-05-05T16:44:44.772307+00:00", "action": "HEARTBEAT", "tick": 9200, "price": 81052.51, "pos": true, "equity": 989770.6542590704, "total": 988433.0781498577}
+HTTP Request: POST http://127.0.0.1:8765/api/close "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:45:02.401400+00:00", "action": "close", "reason": "保有 1800t (上限 1800t) 超過", "price": 81072.79, "result": "買い決済 18.325471 BTC @ $81,069.03、損益 $-2,371.90"}
+{"ts": "2026-05-05T16:45:03.892434+00:00", "action": "HEARTBEAT", "tick": 9400, "price": 81064.46, "pos": false, "equity": 987398.7496030933, "total": 987398.7496030933}
+HTTP Request: POST http://127.0.0.1:8765/api/sl "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/tp "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/long "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:45:03.900513+00:00", "action": "open_long", "reason": "平均回帰: z=-1.51 < -1.5", "price": 81059.6, "lev": 5.0, "size": 0.3, "ok": true, "result": "買建 18.272455 BTC @ $81,056.33、レバ 5倍、清算価格 $66,871.47"}
+HTTP Request: POST http://127.0.0.1:8765/api/sl "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/tp "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/long "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:45:03.909171+00:00", "action": "open_long", "reason": "平均回帰: z=-1.55 < -1.5", "price": 81050.05, "lev": 5.0, "size": 0.3, "ok": true, "result": "既にポジションがあります。先に決済してください。"}
+{"ts": "2026-05-05T16:45:18.061498+00:00", "action": "HEARTBEAT", "tick": 9600, "price": 81066.47, "pos": true, "equity": 986065.761291129, "total": 986251.0439825791}
+{"ts": "2026-05-05T16:45:29.842401+00:00", "action": "HEARTBEAT", "tick": 9800, "price": 81107.96, "pos": true, "equity": 986065.761291129, "total": 987009.168131323}
+{"ts": "2026-05-05T16:45:45.812170+00:00", "action": "HEARTBEAT", "tick": 10000, "price": 81128.21, "pos": true, "equity": 986065.761291129, "total": 987379.1853405797}
+{"ts": "2026-05-05T16:45:51.298377+00:00", "action": "HEARTBEAT", "tick": 10200, "price": 81143.88, "pos": true, "equity": 986065.761291129, "total": 987665.5147069527}
+{"ts": "2026-05-05T16:46:20.864783+00:00", "action": "HEARTBEAT", "tick": 10400, "price": 81145.88, "pos": true, "equity": 986065.761291129, "total": 987702.0596165089}
+{"ts": "2026-05-05T16:46:57.904421+00:00", "action": "HEARTBEAT", "tick": 10600, "price": 81147.68, "pos": true, "equity": 986065.761291129, "total": 987734.9500351093}
+{"ts": "2026-05-05T16:47:28.691109+00:00", "action": "HEARTBEAT", "tick": 10800, "price": 81171.5, "pos": true, "equity": 986065.761291129, "total": 988170.199907924}
+{"ts": "2026-05-05T16:48:17.370291+00:00", "action": "HEARTBEAT", "tick": 11000, "price": 81164.85, "pos": true, "equity": 986065.761291129, "total": 988048.6880836497}
+{"ts": "2026-05-05T16:48:46.817244+00:00", "action": "HEARTBEAT", "tick": 11200, "price": 81185.35, "pos": true, "equity": 986065.761291129, "total": 988423.273406601}
+HTTP Request: POST http://127.0.0.1:8765/api/close "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:48:58.818763+00:00", "action": "close", "reason": "保有 1800t (上限 1800t) 超過", "price": 81193.14, "result": "買い決済 18.272455 BTC @ $81,193.14、損益 +$1,164.62"}
+HTTP Request: POST http://127.0.0.1:8765/api/sl "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/tp "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/long "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T16:49:15.362081+00:00", "action": "open_long", "reason": "平均回帰: z=-1.59 < -1.5", "price": 81188.97, "lev": 5.0, "size": 0.3, "ok": true, "result": "買建 18.239753 BTC @ $81,187.81、レバ 5倍、清算価格 $66,979.94"}
+{"ts": "2026-05-05T16:49:16.066737+00:00", "action": "HEARTBEAT", "tick": 11400, "price": 81187.8, "pos": true, "equity": 985897.6166384487, "total": 985897.434240923}
+{"ts": "2026-05-05T16:50:02.794358+00:00", "action": "HEARTBEAT", "tick": 11600, "price": 81180.01, "pos": true, "equity": 985897.6166384487, "total": 985755.3465683669}
+{"ts": "2026-05-05T16:50:36.104142+00:00", "action": "HEARTBEAT", "tick": 11800, "price": 81193.58, "pos": true, "equity": 985897.6166384487, "total": 986002.8600108041}
+{"ts": "2026-05-05T16:50:53.126404+00:00", "action": "HEARTBEAT", "tick": 12000, "price": 81217.51, "pos": true, "equity": 985897.6166384487, "total": 986439.3372899138}
+{"ts": "2026-05-05T16:51:11.016001+00:00", "action": "HEARTBEAT", "tick": 12200, "price": 81239.18, "pos": true, "equity": 985897.6166384487, "total": 986834.592728205}
+{"ts": "2026-05-05T16:51:50.861112+00:00", "action": "HEARTBEAT", "tick": 12400, "price": 81228.86, "pos": true, "equity": 985897.6166384487, "total": 986646.3584816355}
+{"ts": "2026-05-05T16:52:12.617168+00:00", "action": "HEARTBEAT", "tick": 12600, "price": 81243.0, "pos": true, "equity": 985897.6166384487, "total": 986904.2685830401}
+{"ts": "2026-05-05T16:52:15.155131+00:00", "action": "WS_RECONNECT", "error": "no close frame received or sent"}
