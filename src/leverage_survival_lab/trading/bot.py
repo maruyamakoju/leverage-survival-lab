@@ -108,7 +108,10 @@ class AITrader:
 
         # 既にポジションがある場合 → 時間切れチェック
         if pos is not None:
-            held_ticks = self.tick_idx - (self.position_opened_at or self.tick_idx)
+            # position_opened_at 未設定なら今を起点にする(再起動時のリカバリ)
+            if self.position_opened_at is None:
+                self.position_opened_at = self.tick_idx
+            held_ticks = self.tick_idx - self.position_opened_at
             if held_ticks >= cfg.hold_max_ticks:
                 return ("close", f"保有 {held_ticks}t (上限 {cfg.hold_max_ticks}t) 超過")
             return None
