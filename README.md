@@ -4,9 +4,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-74%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-80%20passed-brightgreen.svg)]()
 
-![hero heatmap](results/figures/hero_heatmap.png)
+![results dashboard](results/figures/results_dashboard.png)
 
 ## TL;DR
 

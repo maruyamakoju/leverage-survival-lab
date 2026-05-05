@@ -41,6 +41,8 @@ results/
 !results/agent_log.jsonl
 !results/cross_asset_summary_n200.parquet
 !results/figures/h3_edge_crossover.png
+!results/figures/results_dashboard.png
+!results/cross_margin_summary.parquet
 
 # 実験管理
 mlruns/
