@@ -22,7 +22,7 @@ classifiers = [
 
 dependencies = [
     "numpy>=1.26",
-    "pandas>=2.1",
+    "pandas>=2.2,<3",  # pandas 3.0.x にセグフォルト不具合がある(list-of-dict 構築)
     "pyarrow>=15",
     "duckdb>=0.10",
     "scipy>=1.11",
