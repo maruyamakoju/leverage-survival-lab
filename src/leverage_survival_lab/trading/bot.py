@@ -51,6 +51,7 @@ class BotConfig:
     rsi_oversold: float = 30.0
     rsi_overbought: float = 70.0
     candle_seconds: int = 60     # RSI 用に何秒で1本のロウソクにするか
+    bootstrap_parquet: str | None = None  # 起動時に過去 1m データから minute_closes を初期化
 
 
 class AITrader:
@@ -316,12 +317,30 @@ class AITrader:
         except Exception as e:
             await self._log({"action": "ERROR", "reason": reason, "error": str(e)})
 
+    def _bootstrap_candles(self) -> int:
+        """parquet から最新の close 価格を minute_closes に注入。"""
+        if not self.cfg.bootstrap_parquet:
+            return 0
+        try:
+            import pandas as pd
+            df = pd.read_parquet(self.cfg.bootstrap_parquet)
+            # 最新 200 本(1m足前提)を注入
+            for px in df["close"].tail(200).tolist():
+                self.minute_closes.append(float(px))
+            return len(self.minute_closes)
+        except Exception as e:
+            print(f"bootstrap failed: {e}", flush=True)
+            return 0
+
     async def run(self) -> None:
         """WebSocket 接続して state を受信し続ける。"""
         ws_url = self.cfg.base_url.replace("http://", "ws://").replace("https://", "wss://") + "/ws"
+        bootstrap_n = self._bootstrap_candles()
         await self._log({"action": "START", "config": {
             "leverage": self.cfg.leverage, "size_pct": self.cfg.size_pct,
             "sl_pct": self.cfg.sl_pct, "tp_pct": self.cfg.tp_pct,
+            "strategy": self.cfg.strategy,
+            "bootstrap_candles": bootstrap_n,
         }})
         # 接続リトライループ
         while not self.stopped:
@@ -356,6 +375,8 @@ def main() -> None:
     p.add_argument("--rsi-oversold", type=float, default=30.0)
     p.add_argument("--rsi-overbought", type=float, default=70.0)
     p.add_argument("--candle-seconds", type=int, default=60)
+    p.add_argument("--bootstrap", default=None,
+                   help="起動時に minute_closes に注入する 1m parquet パス")
     p.add_argument("--bust-at", type=float, default=0.30,
                    help="残高がこの比率を割ったら停止")
     p.add_argument("--log", default="results/ai_trader_log.jsonl")
@@ -370,6 +391,7 @@ def main() -> None:
         strategy=args.strategy, rsi_period=args.rsi_period,
         rsi_oversold=args.rsi_oversold, rsi_overbought=args.rsi_overbought,
         candle_seconds=args.candle_seconds,
+        bootstrap_parquet=args.bootstrap,
         log_path=Path(args.log),
     )
     trader = AITrader(cfg)
