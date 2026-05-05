@@ -31,6 +31,14 @@ results/
 *.feather
 *.h5
 
+# 公開する figure / report は明示的に許可する(README から参照される)
+!results/figures/hero_heatmap.png
+!results/figures/equity_curves_sample.png
+!results/figures/
+!results/figures/*.png
+!results/hypothesis_test_real_btc_n500.md
+!results/report_real_btc_n500.md
+
 # 実験管理
 mlruns/
 wandb/
