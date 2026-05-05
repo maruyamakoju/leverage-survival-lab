@@ -2,7 +2,7 @@
 
 ## 日本語版
 
-**1/12** 「100倍レバ × 損切ルール」で個人投資家でも勝てる、という SNS の俗説に対して、Binance 6 年分のデータで 87,325 回モンテカルロを回して検証した。結論からいうと: 100倍レバの30日生存率は 0% で、CI上限 0.76%。ほぼ完全に詰んでいる。 🧵
+**1/12** 「100倍レバ × 損切ルール」で個人投資家でも勝てる、という SNS の俗説に対して、Binance 6 年分のデータ(BTC/ETH/SOL)で **約 27 万回**モンテカルロを回して検証した。結論からいうと: **100倍レバの30日生存率は 0% で、CI上限 0.27%**。BTC でも ETH でも SOL でも詰んでいる。 🧵
 
 **2/** プレ・レジストレーション 4 仮説:
 
@@ -69,7 +69,7 @@ https://github.com/maruyamakoju/leverage-survival-lab
 
 ## English version
 
-**1/12** I ran 87,325 Monte Carlo backtests on 6 years of real Binance BTC/USDT data to test whether "100x leverage works with proper stop loss." TL;DR: 100x 30-day survival = 0%, 95% CI upper 0.76%. The data is unambiguous. 🧵
+**1/12** I ran ~270,000 Monte Carlo backtests on 6 years of real Binance perp data (BTC/ETH/SOL) to test whether "100x leverage works with proper stop loss." TL;DR: **100x 30-day survival = 0%, 95% CI upper 0.27%**. Holds across all three majors. 🧵
 
 **2/** Pre-registered 4 hypotheses, locked at git commit `4694ff0`:
 H1 100x survival < 10%
