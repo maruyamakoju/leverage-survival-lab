@@ -177,6 +177,18 @@ class AITrader:
             held_ticks = self.tick_idx - self.position_opened_at
             if held_ticks >= cfg.hold_max_ticks:
                 return ("close", f"保有 {held_ticks}t (上限 {cfg.hold_max_ticks}t) 超過")
+
+            # RSI 戦略時: RSI が中立(50)に戻ったら early exit
+            if cfg.strategy == "rsi" and held_ticks > 60:  # 最低 60t は保有
+                rsi = self._rsi()
+                if rsi is not None:
+                    side = state_pos.get("side")
+                    # SHORT (overbought で建玉) → RSI が 55 を割ったら戻り → 利確
+                    if side == "short" and rsi < 55:
+                        return ("close", f"RSI 戻り {rsi:.1f} < 55 (SHORT 利確)")
+                    # LONG (oversold で建玉) → RSI が 45 を超えたら戻り → 利確
+                    if side == "long" and rsi > 45:
+                        return ("close", f"RSI 戻り {rsi:.1f} > 45 (LONG 利確)")
             return None
 
         # ノーポジ(自分の認識上)
