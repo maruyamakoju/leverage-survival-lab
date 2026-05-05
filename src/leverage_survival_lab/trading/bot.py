@@ -57,11 +57,14 @@ class AITrader:
         self.tick_idx = 0
         self.position_opened_at: int | None = None
         self.last_logged_pnl_pct: float = 0.0
-        self.client = httpx.AsyncClient(base_url=cfg.base_url, timeout=10)
+        # httpx クライアントは非同期コンテキスト内で初期化(Windows で event loop 問題を避ける)
+        self.client: httpx.AsyncClient | None = None
         self.log_path = cfg.log_path
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         self.initial_equity: float | None = None
         self.stopped = False
+        # tick が来てる証跡を残す(debug)
+        self.last_heartbeat_tick = 0
 
     # ---- helpers ----
     def _zscore(self) -> float:
@@ -85,6 +88,8 @@ class AITrader:
         return (sum(recent) / 5) / (sum(prior) / 5) - 1.0
 
     async def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
+        if self.client is None:
+            self.client = httpx.AsyncClient(base_url=self.cfg.base_url, timeout=10)
         r = await self.client.post(path, json=body)
         return r.json()
 
@@ -189,6 +194,12 @@ class AITrader:
             return
         self.tick_idx += 1
         self.prices.append(price)
+        # 200 ticks ごとに heartbeat ログ
+        if self.tick_idx - self.last_heartbeat_tick >= 200:
+            self.last_heartbeat_tick = self.tick_idx
+            await self._log({"action": "HEARTBEAT", "tick": self.tick_idx,
+                              "price": price, "pos": state["position"] is not None,
+                              "equity": state["equity"], "total": state["total_value"]})
         if self.initial_equity is None:
             self.initial_equity = state["initial_equity"]
 
