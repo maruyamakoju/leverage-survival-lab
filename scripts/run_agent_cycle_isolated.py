@@ -50,7 +50,8 @@ def main() -> None:
     out_df = run_grid_realdata(df, spec, n_windows=args.n_windows, seed=args.seed,
                                 n_workers=1, show_progress=False)
     finished = datetime.now(timezone.utc)
-    grid_path = save_grid_results(out_df, f"agent_cycle_{h.name}_seed{args.seed}")
+    asset_tag = Path(args.data).stem
+    grid_path = save_grid_results(out_df, f"agent_cycle_{h.name}_{asset_tag}_seed{args.seed}")
     insight = synthesize_insight(out_df, h)
 
     rec = {
@@ -58,6 +59,8 @@ def main() -> None:
         "hypothesis": {"name": h.name, "description": h.description,
                        "operationalization": h.operationalization,
                        "rejection_rule": h.rejection_rule},
+        "data": args.data,
+        "asset": asset_tag,
         "grid_spec": {"n_windows": args.n_windows, "leverages": list(spec.leverages),
                       "stop_losses": list(spec.stop_losses), "strategies": list(spec.strategies),
                       "risk_fractions": list(spec.risk_fractions)},
