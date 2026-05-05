@@ -73,6 +73,7 @@ lsl-fetch = "leverage_survival_lab.data.fetch:main"
 lsl-backtest = "leverage_survival_lab.backtest.cli:main"
 lsl-trade = "leverage_survival_lab.trading.cli:main"
 lsl-web = "leverage_survival_lab.web.app:run"
+lsl-ai-trader = "leverage_survival_lab.trading.bot:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
