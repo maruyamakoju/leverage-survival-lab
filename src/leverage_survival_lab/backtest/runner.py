@@ -61,7 +61,13 @@ def run_backtest(df: pd.DataFrame, signal: pd.Series, config: BacktestConfig) ->
 
     eng = LeverageEngine(initial_equity=config.initial_equity, fee=config.fee)
     equity_curve = np.empty(len(df), dtype=np.float64)
-    trades: list[dict[str, float | str | int]] = []
+    # 各 trade レコードはすべて同じキー集合を持たせる(pd.DataFrame 構築の安定化)
+    trades: list[dict[str, float | str | int | None]] = []
+    _trade_keys = ("bar", "action", "side", "price", "pnl")
+
+    def _record(bar: int, action: str, side: str, price: float, pnl: float | None = None) -> None:
+        trades.append({"bar": bar, "action": action, "side": side, "price": float(price),
+                       "pnl": float(pnl) if pnl is not None else None})
 
     opens = df["open"].to_numpy()
     highs = df["high"].to_numpy()
@@ -86,9 +92,7 @@ def run_backtest(df: pd.DataFrame, signal: pd.Series, config: BacktestConfig) ->
             # 清算が最優先
             if pos.is_liquidated(bar_high=highs[i], bar_low=lows[i]):
                 eng.force_liquidate()
-                trades.append(
-                    {"bar": i, "action": "liquidated", "side": pos.side.value, "price": pos.liq_price}
-                )
+                _record(i, "liquidated", pos.side.value, pos.liq_price)
             else:
                 # SL / TP
                 exit_price: float | None = None
@@ -109,7 +113,7 @@ def run_backtest(df: pd.DataFrame, signal: pd.Series, config: BacktestConfig) ->
                         exit_kind = "take_profit"
                 if exit_price is not None and exit_kind is not None:
                     net = eng.close(price=exit_price, is_stop=(exit_kind == "stop_loss"))
-                    trades.append({"bar": i, "action": exit_kind, "side": pos.side.value, "price": exit_price, "pnl": net})
+                    _record(i, exit_kind, pos.side.value, exit_price, pnl=net)
 
         # 3) シグナルに従って次バー始値で約定する想定 → ここでは「翌バー i+1 の open」を予約
         #    実装上は次のループの先頭で約定させる方が単純なので、
@@ -129,7 +133,7 @@ def run_backtest(df: pd.DataFrame, signal: pd.Series, config: BacktestConfig) ->
                 next_open = float(opens[i + 1])
                 eng.open(side=target_side, price=next_open, leverage=config.leverage,
                          risk_fraction=config.risk_fraction, bar=i + 1)
-                trades.append({"bar": i + 1, "action": "open", "side": target_side.value, "price": next_open})
+                _record(i + 1, "open", target_side.value, next_open)
 
         # 4) equity 記録(現ポジの含み損益込みで mark)
         unrealized = eng.position.unrealized_pnl(closes[i]) if eng.position else 0.0
@@ -143,7 +147,8 @@ def run_backtest(df: pd.DataFrame, signal: pd.Series, config: BacktestConfig) ->
             break
 
     eq_series = pd.Series(equity_curve, index=df.index, name="equity")
-    trade_df = pd.DataFrame(trades)
+    # 空 trades の場合の DataFrame コンストラクタ安定化のため、明示的にカラム指定
+    trade_df = pd.DataFrame(trades, columns=list(_trade_keys)) if trades else pd.DataFrame(columns=list(_trade_keys))
     return BacktestResult(
         equity_curve=eq_series,
         trades=trade_df,

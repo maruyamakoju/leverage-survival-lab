@@ -156,7 +156,7 @@ def run_grid_synthetic(
     if n_workers <= 1:
         it = tasks
         if show_progress:
-            it = tqdm(it, total=len(tasks))  # type: ignore[assignment]
+            it = tqdm(it, total=len(tasks), mininterval=2.0, miniters=500)  # type: ignore[assignment]
         for t in it:
             df = cached_data[t.seed][1]
             results.append(_run_one(t, df))
@@ -235,7 +235,7 @@ def run_grid_realdata(
     if n_workers <= 1:
         it = tasks
         if show_progress:
-            it = tqdm(it, total=len(tasks))  # type: ignore[assignment]
+            it = tqdm(it, total=len(tasks), mininterval=2.0, miniters=500)  # type: ignore[assignment]
         for t in it:
             results.append(_run_one(t, cached[t.data_id]))
     else:
@@ -243,7 +243,7 @@ def run_grid_realdata(
         with mp.get_context("spawn").Pool(n_workers) as pool:
             it = pool.imap_unordered(_grid_worker, payloads, chunksize=8)
             if show_progress:
-                it = tqdm(it, total=len(payloads))  # type: ignore[assignment]
+                it = tqdm(it, total=len(payloads), mininterval=2.0, miniters=500)  # type: ignore[assignment]
             for r in it:
                 results.append(r)
 
