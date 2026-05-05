@@ -1,6 +1,6 @@
 # Leverage Survival Lab
 
-> **Does "100x leverage with stop loss" actually work?** — verified across 87,325 Monte Carlo backtests on real BTC/USDT data.
+> **Does "100x leverage with stop loss" actually work?** — verified across 269,963 Monte Carlo backtests on real BTC/USDT data.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -11,11 +11,11 @@
 
 ## TL;DR
 
-We sampled **500 random 30-day windows** from 6+ years of Binance USDT-M Perpetual BTC/USDT 1-hour bars (2020-01–2026-05) and ran **87,325 Monte Carlo backtests** across 5 strategies × 7 leverage levels × 5 stop-loss tiers.
+We sampled **~1,800 random 30-day windows** from 6+ years of Binance USDT-M Perpetual BTC/USDT 1-hour bars (2020-01–2026-05) and ran **269,963 Monte Carlo backtests** across 5 strategies × 7 leverage levels × 5 stop-loss tiers.
 
 **Findings**:
 
-- **100x leverage 30-day survival rate = 0%.** 95% Wilson CI upper bound: **0.76%**
+- **100x leverage 30-day survival rate = 0%.** 95% Wilson CI upper bound: **0.27%**
 - Result holds across all stop-loss levels (-0.5% to -5%, or none)
 - **Reducing position size to 5% of equity does not save 100x** — accumulated losses still kill the account
 - Holds across all market regimes (trend up, range, crash)
@@ -29,12 +29,12 @@ To prevent post-hoc cherry-picking, we pre-registered 4 hypotheses in [docs/hypo
 
 | Hypothesis | Result | Headline number |
 |------------|--------|-----------------|
-| **H1**: 100x 30d survival < 10% regardless of stop loss | **Strongly supported** | 0/25 cells violate, **CI upper 0.76%** |
+| **H1**: 100x 30d survival < 10% regardless of stop loss | **Strongly supported** | 0/25 cells violate, **CI upper 0.27%** |
 | **H2**: Optimal stop-loss is interior (not boundary) | Partially supported | Interior solutions only at mid-leverage (5x, 10x) |
 | **H3**: Strategy edge dies at 10–20x | Not measurable | All 5 strategies have negative log-return at 1x already (fees) |
 | **H4**: ≥50x has no strategy advantage | **Supported** | All 8 comparisons: p > 0.00625 |
 
-Full report: [`results/hypothesis_test_real_btc_n500.md`](results/hypothesis_test_real_btc_n500.md)
+Full report: [`results/hypothesis_test_real_btc_n2000.md`](results/hypothesis_test_real_btc_n2000.md)
 
 ## Why a custom simulator (and not vectorbt etc.)?
 
