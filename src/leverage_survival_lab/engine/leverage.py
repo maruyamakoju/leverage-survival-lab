@@ -180,6 +180,9 @@ class LeverageEngine:
         notional = im * leverage
         qty = notional / price
         mm_rate = self._mm(notional)
+        # 注: mm_rate >= 1/leverage は「即清算」状態を意味する(実取引所では拒否される)。
+        # 研究用ではバンドライン上で清算 = bust とみなすため、エンジンレベルでは拒否しない。
+        # 対話 UI 側(PaperBroker)で fail-safe な事前チェックを行う。
         liq = liquidation_price(entry=price, leverage=leverage, side=side, mm=mm_rate)
 
         # エントリー手数料を equity から差し引く

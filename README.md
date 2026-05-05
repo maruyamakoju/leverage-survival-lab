@@ -122,6 +122,41 @@ Binance USDT-M Perpetual の **BTC/USDT 6 年分(2020-01〜2026-05)** から 30 
 5. **Isolated 証拠金で equity を 0 でクランプ**(手数料負担で負にならないように)
 6. **複数比較補正**: Bonferroni / BH-FDR / Deflated Sharpe
 
+## 仮想金で BTC をバンバン触る (`lsl-trade`)
+
+研究結果を見ても腹落ちしないなら、**自分でやってみる**のが一番。
+ペーパートレード CLI を同梱しています(実弾は1円も使いません)。
+
+### Replay モード — 過去データを早送り
+
+```bash
+# 過去6年からランダムに30日窓を切り出して開始
+lsl-trade replay --random-window 720 --equity 1000000 --leverage 10
+
+# 特定期間で
+lsl-trade replay --start 2024-01-01 --end 2024-02-01
+```
+
+```
+> long 50 25       # 50% 資金 × 25倍レバでロング
+> sl 2             # -2% で損切セット
+> tp 5             # +5% で利確セット
+> auto 100 50      # 100バー 50ms間隔で自動進行
+> close            # 現在のポジを決済
+> trades           # 取引履歴
+> chart            # ASCII 価格 + equity チャート
+> save my_run.json # セッション保存
+```
+
+### Live モード — Binance のリアル価格 (仮想金)
+
+```bash
+lsl-trade live --poll 5         # 5秒ごとに ticker fetch
+```
+
+エンジンは研究と同じ `LeverageEngine`。**清算は intra-bar 判定、SL/TP は自動執行**。
+100倍 × 100% size のような不可能な組合せは事前に reject(実取引所と同じ挙動)。
+
 ## 使い方
 
 ```bash

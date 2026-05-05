@@ -68,6 +68,7 @@ Issues = "https://github.com/maruyamakoju/leverage-survival-lab/issues"
 [project.scripts]
 lsl-fetch = "leverage_survival_lab.data.fetch:main"
 lsl-backtest = "leverage_survival_lab.backtest.cli:main"
+lsl-trade = "leverage_survival_lab.trading.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
