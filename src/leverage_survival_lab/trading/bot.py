@@ -44,7 +44,13 @@ class BotConfig:
     momentum_threshold: float = 0.0008  # short-term return > this → trend entry
     history_size: int = 60
     log_path: Path = Path("results/ai_trader_log.jsonl")
-    bust_at: float = 0.30  # equity が初期の 30% を割ったら停止
+    bust_at: float = 0.30
+    # 戦略モード: zscore / rsi / momentum
+    strategy: str = "zscore"
+    rsi_period: int = 14
+    rsi_oversold: float = 30.0
+    rsi_overbought: float = 70.0
+    candle_seconds: int = 60     # RSI 用に何秒で1本のロウソクにするか
 
 
 class AITrader:
@@ -53,6 +59,10 @@ class AITrader:
     def __init__(self, cfg: BotConfig) -> None:
         self.cfg = cfg
         self.prices: deque[float] = deque(maxlen=cfg.history_size)
+        # ロウソク用: 1 ロウソク = candle_seconds 秒の最後の close
+        self.minute_closes: deque[float] = deque(maxlen=200)
+        self._cur_candle_close: float | None = None
+        self._cur_candle_bucket: int = -1
         self.last_trade_tick = -10**9
         self.tick_idx = 0
         self.position_opened_at: int | None = None
@@ -88,6 +98,43 @@ class AITrader:
         recent = arr[-5:]
         prior = arr[-10:-5]
         return (sum(recent) / 5) / (sum(prior) / 5) - 1.0
+
+    def _update_candle(self, price: float, ts_str: str | None) -> None:
+        """tick を candle に集約。candle 完成時に minute_closes へ push。"""
+        # ts_str を秒単位の bucket に変換
+        if not ts_str:
+            return
+        try:
+            from datetime import datetime
+            ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+            bucket = int(ts.timestamp()) // self.cfg.candle_seconds
+        except Exception:
+            return
+        if bucket != self._cur_candle_bucket:
+            # 前のバケット完成 → push
+            if self._cur_candle_close is not None:
+                self.minute_closes.append(self._cur_candle_close)
+            self._cur_candle_bucket = bucket
+        self._cur_candle_close = price
+
+    def _rsi(self) -> float | None:
+        """minute_closes から RSI(period) を計算。"""
+        period = self.cfg.rsi_period
+        if len(self.minute_closes) < period + 1:
+            return None
+        arr = list(self.minute_closes)
+        gains, losses = [], []
+        for i in range(1, len(arr)):
+            d = arr[i] - arr[i - 1]
+            gains.append(max(d, 0))
+            losses.append(max(-d, 0))
+        # EMA-based RSI(Wilder smoothing 風の単純版)
+        avg_gain = sum(gains[-period:]) / period
+        avg_loss = sum(losses[-period:]) / period
+        if avg_loss == 0:
+            return 100.0
+        rs = avg_gain / avg_loss
+        return 100.0 - 100.0 / (1.0 + rs)
 
     async def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
         if self.client is None:
@@ -141,7 +188,18 @@ class AITrader:
         if self.tick_idx - self.last_trade_tick < cfg.cooldown_ticks:
             return None
 
-        # 履歴が薄ければ何もしない
+        # ---- RSI mode ---- (トーナメント勝者)
+        if cfg.strategy == "rsi":
+            rsi = self._rsi()
+            if rsi is None:
+                return None
+            if rsi < cfg.rsi_oversold:
+                return ("long", f"RSI={rsi:.1f} < {cfg.rsi_oversold} (oversold)")
+            if rsi > cfg.rsi_overbought:
+                return ("short", f"RSI={rsi:.1f} > {cfg.rsi_overbought} (overbought)")
+            return None
+
+        # ---- zscore (デフォルト) ----
         if len(self.prices) < self.cfg.history_size // 2:
             return None
 
@@ -218,12 +276,22 @@ class AITrader:
             return
         self.tick_idx += 1
         self.prices.append(price)
+        # candle aggregator(RSI 用)
+        ts_str = state.get("ts")
+        if ts_str:
+            self._update_candle(price, ts_str)
         # 200 ticks ごとに heartbeat ログ
         if self.tick_idx - self.last_heartbeat_tick >= 200:
             self.last_heartbeat_tick = self.tick_idx
+            extra = {}
+            if self.cfg.strategy == "rsi":
+                rsi = self._rsi()
+                extra["rsi"] = round(rsi, 2) if rsi is not None else None
+                extra["candles"] = len(self.minute_closes)
             await self._log({"action": "HEARTBEAT", "tick": self.tick_idx,
                               "price": price, "pos": state["position"] is not None,
-                              "equity": state["equity"], "total": state["total_value"]})
+                              "equity": state["equity"], "total": state["total_value"],
+                              **extra})
         if self.initial_equity is None:
             self.initial_equity = state["initial_equity"]
 
@@ -276,6 +344,7 @@ class AITrader:
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--base-url", default="http://127.0.0.1:8765")
+    p.add_argument("--strategy", choices=["zscore", "rsi"], default="zscore")
     p.add_argument("--leverage", type=float, default=25.0)
     p.add_argument("--size", type=float, default=0.30, help="0..1")
     p.add_argument("--sl", type=float, default=1.5)
@@ -283,6 +352,10 @@ def main() -> None:
     p.add_argument("--hold", type=int, default=120)
     p.add_argument("--cooldown", type=int, default=10)
     p.add_argument("--z-threshold", type=float, default=1.5)
+    p.add_argument("--rsi-period", type=int, default=14)
+    p.add_argument("--rsi-oversold", type=float, default=30.0)
+    p.add_argument("--rsi-overbought", type=float, default=70.0)
+    p.add_argument("--candle-seconds", type=int, default=60)
     p.add_argument("--bust-at", type=float, default=0.30,
                    help="残高がこの比率を割ったら停止")
     p.add_argument("--log", default="results/ai_trader_log.jsonl")
@@ -294,6 +367,9 @@ def main() -> None:
         sl_pct=args.sl, tp_pct=args.tp,
         hold_max_ticks=args.hold, cooldown_ticks=args.cooldown,
         z_threshold=args.z_threshold, bust_at=args.bust_at,
+        strategy=args.strategy, rsi_period=args.rsi_period,
+        rsi_oversold=args.rsi_oversold, rsi_overbought=args.rsi_overbought,
+        candle_seconds=args.candle_seconds,
         log_path=Path(args.log),
     )
     trader = AITrader(cfg)
