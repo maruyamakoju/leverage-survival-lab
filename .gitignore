@@ -38,6 +38,7 @@ results/
 !results/figures/*.png
 !results/hypothesis_test_real_btc_n500.md
 !results/report_real_btc_n500.md
+!results/agent_log.jsonl
 
 # 実験管理
 mlruns/

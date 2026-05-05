@@ -24,17 +24,24 @@ from leverage_survival_lab.config import settings
 
 
 def synthesize_insight(grid_df: pd.DataFrame, hypothesis: Hypothesis) -> str:
-    """grid 結果から insight 文字列を組み立てる(超単純な式)。"""
-    n = len(grid_df)
-    high_lev = grid_df[grid_df["leverage"] >= 50.0]
-    high_bust = float(high_lev["is_bust"].mean()) if len(high_lev) else float("nan")
-    summary = (
-        f"hypothesis={hypothesis.name}; "
-        f"n_sims={n}; "
-        f"bust_rate@>=50x={high_bust*100:.1f}%; "
-        f"non_bust_count@>=50x={int((~high_lev['is_bust']).sum()) if len(high_lev) else 0}"
-    )
-    return summary
+    """grid 結果から insight 文字列を組み立てる。"""
+    valid = grid_df[grid_df["error"].isna()] if "error" in grid_df.columns else grid_df
+    n = len(valid)
+    high_lev = valid[valid["leverage"] >= 50.0]
+    low_lev = valid[valid["leverage"] <= 5.0]
+
+    if hypothesis.name == "H1":
+        survival = float((valid[valid["leverage"] == 100.0]["final_equity"] >= 100_000).mean())
+        return (f"H1: 100x 30d survival = {survival*100:.2f}% (N={n}). "
+                f"100x bust rate = {float(valid[valid['leverage']==100.0]['is_bust'].mean())*100:.1f}%")
+    elif hypothesis.name == "H4":
+        bust_50 = float(valid[valid["leverage"] == 50.0]["is_bust"].mean())
+        bust_100 = float(valid[valid["leverage"] == 100.0]["is_bust"].mean())
+        return f"H4: bust@50x={bust_50*100:.1f}% bust@100x={bust_100*100:.1f}% (no strategy advantage at high lev)"
+    else:
+        high_bust = float(high_lev["is_bust"].mean()) if len(high_lev) else float("nan")
+        low_bust = float(low_lev["is_bust"].mean()) if len(low_lev) else float("nan")
+        return f"{hypothesis.name}: bust@<=5x={low_bust*100:.1f}% bust@>=50x={high_bust*100:.1f}% N={n}"
 
 
 def main() -> None:
