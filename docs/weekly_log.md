@@ -71,6 +71,29 @@
 - [ ] 既知シナリオ(2020/03, 2021/05, 2022/11)での再現性検証
 - [ ] Walk-forward 分析の本格実装
 
+## Week 3 — 同日着手
+
+### 完了
+
+- [x] CrossMarginEngine(MVP, 複数ポジション + アカウントレベル清算)
+- [x] Walk-forward harness(IS最適化→OOS評価)
+- [x] レジーム条件付き実験(trend_up/down/range/crash で個別評価)
+- [x] Agent loop 骨格 + 1サイクル demo
+- [x] 既知シナリオの結合テスト(LUNA/FTX/COVID/May2021/Bull2021)
+- [x] **risk_fraction sweep 実験** — 100x × {1.0, 0.5, 0.25, 0.10, 0.05}, all rf → 生存率0% / CI上限 0.76%
+- [x] H1 のレジーム別検証 — trend_up / range / crash で全て 100x 生存率 0%
+
+### 学び
+
+- pandas/numpy 由来のセグフォルトが Windows 環境で間欠発生。回避策:
+  1. プロセスごとに小規模分割(rf や regime ごとに別プロセス)
+  2. `pd.DataFrame(list_of_dict)` を column-wise builder に置き換え
+  3. trade dict のスキーマ統一
+- ポジションサイズ縮小は 100倍レバを救えない。30日 × 高頻度エントリで累積損失が IM 制限を超える。
+- レジームによらず 100倍は破産する(レジーム依存の希望はない)
+
+
+
 
 
 H1 と一貫する単調減少が確認できた(本実験の確定はWeek 2以降の実データで再現後):

@@ -53,12 +53,13 @@ class GridSpec:
     stop_losses: tuple[float | None, ...] = (-0.005, -0.01, -0.02, -0.05, None)
     take_profits: tuple[float | None, ...] = (None,)
     strategies: tuple[str, ...] = ("random", "sma_cross", "rsi", "bollinger", "breakout")
+    risk_fractions: tuple[float, ...] = (1.0,)
     n_seeds: int = 100
-    risk_fraction: float = 1.0
+    risk_fraction: float = 1.0  # legacy single-value (使われ続ける)
 
     def n_cells(self) -> int:
         return (len(self.leverages) * len(self.stop_losses) * len(self.take_profits) *
-                len(self.strategies) * self.n_seeds)
+                len(self.strategies) * len(self.risk_fractions) * self.n_seeds)
 
 
 @dataclass(frozen=True)
@@ -170,12 +171,28 @@ def run_grid_synthetic(
             for r in it:
                 results.append(r)
 
-    return pd.DataFrame(results)
+    return _safe_records_to_df(results)
 
 
 def _grid_worker(payload: tuple[GridTask, pd.DataFrame]) -> dict[str, Any]:
     task, df = payload
     return _run_one(task, df)
+
+
+def _safe_records_to_df(records: list[dict[str, Any]]) -> pd.DataFrame:
+    """list[dict] -> DataFrame の安全な構築。
+
+    pandas が list-of-dict に対して Windows 上でセグフォルトする回帰があるため、
+    キーごとに list を集めて column-wise に DataFrame を作る。
+    """
+    if not records:
+        return pd.DataFrame()
+    keys = list(records[0].keys())
+    cols: dict[str, list[Any]] = {k: [] for k in keys}
+    for r in records:
+        for k in keys:
+            cols[k].append(r.get(k))
+    return pd.DataFrame(cols)
 
 
 def save_grid_results(df: pd.DataFrame, name: str) -> Path:
@@ -220,12 +237,13 @@ def run_grid_realdata(
     cached = {label: sub for label, sub in windows}
 
     tasks: list[GridTask] = []
-    for L, sl, tp, strat, (label, _) in itertools.product(
-        spec.leverages, spec.stop_losses, spec.take_profits, spec.strategies, windows
+    for L, sl, tp, strat, rf, (label, _) in itertools.product(
+        spec.leverages, spec.stop_losses, spec.take_profits, spec.strategies,
+        spec.risk_fractions, windows
     ):
         tasks.append(GridTask(
             strategy_name=strat, leverage=float(L), stop_loss=sl, take_profit=tp,
-            seed=hash(label) & 0x7fffffff, risk_fraction=spec.risk_fraction,
+            seed=hash(label) & 0x7fffffff, risk_fraction=float(rf),
             data_id=label,
         ))
 
@@ -247,4 +265,4 @@ def run_grid_realdata(
             for r in it:
                 results.append(r)
 
-    return pd.DataFrame(results)
+    return _safe_records_to_df(results)
