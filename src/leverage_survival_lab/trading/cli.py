@@ -182,11 +182,21 @@ def repl(broker: PaperBroker, feed: Iterator[dict[str, Any]]) -> None:
                 console.print(f"[white]{msg}[/white]")
 
             elif cmd == "sl":
-                pct = float(args[0]) / 100 if args else None
+                # 'sl 2' は -2% (ロスを許容する%)。負の値で broker に渡す。
+                if args:
+                    raw = float(args[0])
+                    pct = -abs(raw) / 100   # 必ず負
+                else:
+                    pct = None
                 console.print(broker.set_sl(pct))
 
             elif cmd == "tp":
-                pct = float(args[0]) / 100 if args else None
+                # 'tp 5' は +5%(順行%)。正の値で broker に渡す。
+                if args:
+                    raw = float(args[0])
+                    pct = abs(raw) / 100
+                else:
+                    pct = None
                 console.print(broker.set_tp(pct))
 
             elif cmd == "lev":
@@ -266,7 +276,9 @@ def main() -> None:
     sub = p.add_subparsers(dest="mode", required=True)
 
     p_replay = sub.add_parser("replay", help="過去データを早送り再生")
-    p_replay.add_argument("--data", default="data/raw/binance_BTCUSDT_1h.parquet")
+    p_replay.add_argument("--data", default="data/raw/binance_BTCUSDT_1h.parquet",
+                          help="OHLCV parquet パス。--tf 1m データもあるなら "
+                               "data/raw/binance_BTCUSDT_1m.parquet")
     p_replay.add_argument("--start", default=None, help="ISO 日付 (例: 2024-01-01)")
     p_replay.add_argument("--end", default=None)
     p_replay.add_argument("--random-window", type=int, default=None,

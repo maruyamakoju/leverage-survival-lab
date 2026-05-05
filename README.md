@@ -130,10 +130,13 @@ Binance USDT-M Perpetual の **BTC/USDT 6 年分(2020-01〜2026-05)** から 30 
 ### Replay モード — 過去データを早送り
 
 ```bash
-# 過去6年からランダムに30日窓を切り出して開始
+# 過去6年(1h足)からランダム30日窓
 lsl-trade replay --random-window 720 --equity 1000000 --leverage 10
 
-# 特定期間で
+# 1分足で1日を細かく(2025年以降を取得済)
+lsl-trade replay --data data/raw/binance_BTCUSDT_1m.parquet --random-window 1440
+
+# 特定期間
 lsl-trade replay --start 2024-01-01 --end 2024-02-01
 ```
 
