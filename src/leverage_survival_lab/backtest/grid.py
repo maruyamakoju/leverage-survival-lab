@@ -31,6 +31,7 @@ from ..strategies import (
     RSIStrategy,
     SMACrossStrategy,
     Strategy,
+    TrendFilteredSMA,
 )
 from .runner import BacktestConfig, run_backtest
 
@@ -38,11 +39,12 @@ logger = logging.getLogger(__name__)
 
 
 STRATEGY_FACTORIES: dict[str, Any] = {
-    "random":    lambda seed: RandomStrategy(p_long=0.05, p_short=0.05, seed=seed),
-    "sma_cross": lambda seed: SMACrossStrategy(fast=20, slow=50),
-    "rsi":       lambda seed: RSIStrategy(period=14),
-    "bollinger": lambda seed: BollingerStrategy(window=20, n_std=2.0),
-    "breakout":  lambda seed: BreakoutStrategy(window=20),
+    "random":             lambda seed: RandomStrategy(p_long=0.05, p_short=0.05, seed=seed),
+    "sma_cross":          lambda seed: SMACrossStrategy(fast=20, slow=50),
+    "rsi":                lambda seed: RSIStrategy(period=14),
+    "bollinger":          lambda seed: BollingerStrategy(window=20, n_std=2.0),
+    "breakout":           lambda seed: BreakoutStrategy(window=20),
+    "trend_filtered_sma": lambda seed: TrendFilteredSMA(fast=20, slow=50, trend=200),
 }
 
 

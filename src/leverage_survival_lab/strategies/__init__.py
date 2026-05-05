@@ -5,16 +5,20 @@ from __future__ import annotations
 from .base import Signal, Strategy
 from .bollinger import BollingerStrategy
 from .breakout import BreakoutStrategy
+from .funding_filter import FundingFlipStrategy
 from .random_strategy import RandomStrategy
 from .rsi import RSIStrategy
 from .sma_cross import SMACrossStrategy
+from .trend_filter import TrendFilteredSMA
 
 __all__ = [
     "BollingerStrategy",
     "BreakoutStrategy",
+    "FundingFlipStrategy",
     "RSIStrategy",
     "RandomStrategy",
     "SMACrossStrategy",
     "Signal",
     "Strategy",
+    "TrendFilteredSMA",
 ]

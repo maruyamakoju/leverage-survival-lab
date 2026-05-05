@@ -39,6 +39,8 @@ results/
 !results/hypothesis_test_real_btc_n500.md
 !results/report_real_btc_n500.md
 !results/agent_log.jsonl
+!results/cross_asset_summary_n200.parquet
+!results/figures/h3_edge_crossover.png
 
 # 実験管理
 mlruns/
