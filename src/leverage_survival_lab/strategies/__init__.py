@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from .base import Signal, Strategy
-from .breakout import BreakoutStrategy
 from .bollinger import BollingerStrategy
+from .breakout import BreakoutStrategy
 from .random_strategy import RandomStrategy
 from .rsi import RSIStrategy
 from .sma_cross import SMACrossStrategy

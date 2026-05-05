@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 
 from ..engine.leverage import FeeModel, LeverageEngine, Side
-from ..strategies.base import Strategy
 
 
 @dataclass
@@ -121,9 +120,7 @@ def run_backtest(df: pd.DataFrame, signal: pd.Series, config: BacktestConfig) ->
         #    実際の約定は次バー i+1 の open で行う。
         if i + 1 < n and eng.position is None and sigs[i] != 0:
             target_side = Side.LONG if sigs[i] > 0 else Side.SHORT
-            if config.side_mode == "long_only" and target_side is Side.SHORT:
-                pass
-            elif config.side_mode == "short_only" and target_side is Side.LONG:
+            if (config.side_mode == "long_only" and target_side is Side.SHORT) or (config.side_mode == "short_only" and target_side is Side.LONG):
                 pass
             else:
                 # 翌バー open で約定 → 翌イテレーションで反映するため、

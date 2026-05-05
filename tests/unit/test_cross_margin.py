@@ -1,8 +1,6 @@
 """Cross margin エンジンの単体テスト。"""
 from __future__ import annotations
 
-import math
-
 import pytest
 
 from leverage_survival_lab.engine.cross_margin import CrossMarginEngine, _pid

@@ -14,8 +14,8 @@ from typing import Any
 
 import pandas as pd
 
-from .runner import BacktestConfig, BacktestResult, run_backtest
 from ..strategies.base import Strategy
+from .runner import BacktestConfig, BacktestResult, run_backtest
 
 
 @dataclass

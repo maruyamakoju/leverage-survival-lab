@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 
 from leverage_survival_lab.data.fixtures import (
-    KNOWN_SCENARIOS,
     list_scenarios,
     scenario_window,
     slice_scenario,

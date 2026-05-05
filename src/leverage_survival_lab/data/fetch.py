@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +38,7 @@ def _setup_logging() -> None:
 
 
 def _to_ms(dt_str: str) -> int:
-    dt = datetime.fromisoformat(dt_str).replace(tzinfo=timezone.utc)
+    dt = datetime.fromisoformat(dt_str).replace(tzinfo=UTC)
     return int(dt.timestamp() * 1000)
 
 
@@ -74,7 +74,7 @@ def fetch_ohlcv(
 
     all_rows: list[list[float]] = []
     cursor = since_ms
-    end = until_ms or int(datetime.now(timezone.utc).timestamp() * 1000)
+    end = until_ms or int(datetime.now(UTC).timestamp() * 1000)
     limit = 1500
 
     while cursor < end:
@@ -90,7 +90,7 @@ def fetch_ohlcv(
         if len(all_rows) % (limit * 5) == 0:
             logger.info("ohlcv fetched %d rows up to %s",
                         len(all_rows),
-                        datetime.fromtimestamp(last_ts / 1000, tz=timezone.utc))
+                        datetime.fromtimestamp(last_ts / 1000, tz=UTC))
 
     df = pd.DataFrame(all_rows, columns=["ts", "open", "high", "low", "close", "volume"])
     if df.empty:
@@ -120,7 +120,7 @@ def fetch_funding(
 
     all_rows: list[dict[str, Any]] = []
     cursor = since_ms
-    end = until_ms or int(datetime.now(timezone.utc).timestamp() * 1000)
+    end = until_ms or int(datetime.now(UTC).timestamp() * 1000)
     limit = 1000
 
     while cursor < end:
@@ -136,7 +136,7 @@ def fetch_funding(
         if len(all_rows) % (limit * 3) == 0:
             logger.info("funding fetched %d rows up to %s",
                         len(all_rows),
-                        datetime.fromtimestamp(last_ts / 1000, tz=timezone.utc))
+                        datetime.fromtimestamp(last_ts / 1000, tz=UTC))
 
     if not all_rows:
         return pd.DataFrame()
@@ -176,7 +176,7 @@ def incremental_fetch_ohlcv(
     else:
         since_ms = default_since
         logger.info("fresh fetch from %s",
-                    datetime.fromtimestamp(since_ms / 1000, tz=timezone.utc))
+                    datetime.fromtimestamp(since_ms / 1000, tz=UTC))
     new_df = fetch_ohlcv(
         exchange_name=exchange_name, symbol=symbol, timeframe=timeframe,
         since_ms=since_ms, until_ms=until_ms, market_type=market_type,

@@ -4,8 +4,6 @@
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 import pandas as pd
 
 # (label, start_iso, end_iso, description)
@@ -35,6 +33,6 @@ def slice_scenario(df: pd.DataFrame, scenario: str) -> pd.DataFrame:
 
 def list_scenarios() -> list[dict[str, str]]:
     return [
-        {"name": l, "start": s, "end": e, "description": d}
-        for l, s, e, d in KNOWN_SCENARIOS
+        {"name": label, "start": start, "end": end, "description": desc}
+        for label, start, end, desc in KNOWN_SCENARIOS
     ]

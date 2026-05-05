@@ -14,7 +14,7 @@ import itertools
 import logging
 import multiprocessing as mp
 import os
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -100,7 +100,7 @@ def _run_one(task: GridTask, df: pd.DataFrame) -> dict[str, Any]:
             "is_bust": res.is_bust,
             "total_fees": res.total_fees,
             "total_funding": res.total_funding,
-            "n_trades": int(len(res.trades)),
+            "n_trades": len(res.trades),
             "error": None,
         }
     except Exception as e:
@@ -215,7 +215,7 @@ def random_window_slices(
         raise ValueError("window_bars must be < len(df)")
     starts = rng.integers(0, n - window_bars, size=n_windows)
     out: list[tuple[str, pd.DataFrame]] = []
-    for k, s in enumerate(sorted(set(int(x) for x in starts))):
+    for k, s in enumerate(sorted({int(x) for x in starts})):
         sub = df.iloc[s : s + window_bars].copy()
         ts0 = sub.index.min()
         out.append((f"win{k}_{ts0.strftime('%Y%m%d')}", sub))
@@ -234,7 +234,7 @@ def run_grid_realdata(
 ) -> pd.DataFrame:
     """実データに対しランダム期間で n_windows 個のサンプルを切り、各 (戦略×レバ×SL×TP) で回す。"""
     windows = random_window_slices(df, window_bars=window_bars, n_windows=n_windows, seed=seed)
-    cached = {label: sub for label, sub in windows}
+    cached = dict(windows)
 
     tasks: list[GridTask] = []
     for L, sl, tp, strat, rf, (label, _) in itertools.product(

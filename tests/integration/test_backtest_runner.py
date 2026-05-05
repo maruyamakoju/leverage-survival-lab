@@ -40,7 +40,7 @@ def test_high_leverage_more_likely_to_bust() -> None:
     busts_high = 0
     busts_low = 0
     n = 30
-    for s in range(n):
+    for _s in range(n):
         sig = RandomStrategy(p_long=0.05, p_short=0.05, seed=int(rng.integers(0, 10**9))).generate(df)
         r_high = run_backtest(df, sig, BacktestConfig(leverage=100.0, stop_loss=-0.01))
         r_low = run_backtest(df, sig, BacktestConfig(leverage=2.0, stop_loss=-0.05))

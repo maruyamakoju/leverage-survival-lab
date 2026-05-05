@@ -1,7 +1,6 @@
 """grid 関連のユニットテスト。"""
 from __future__ import annotations
 
-import pandas as pd
 import pytest
 
 from leverage_survival_lab.backtest.grid import (

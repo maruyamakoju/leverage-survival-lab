@@ -1,8 +1,6 @@
 """Walk-forward の単体テスト。"""
 from __future__ import annotations
 
-import pandas as pd
-
 from leverage_survival_lab.backtest.runner import BacktestConfig, BacktestResult
 from leverage_survival_lab.backtest.walkforward import split_walkforward, walkforward
 from leverage_survival_lab.data.synthetic import gbm_ohlcv

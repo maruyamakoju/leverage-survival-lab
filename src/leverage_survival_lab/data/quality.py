@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import numpy as np
 import pandas as pd
 
 
@@ -56,7 +55,7 @@ def assess_ohlcv(df: pd.DataFrame, timeframe: str) -> QualityReport:
     return QualityReport(
         n_rows=len(df),
         n_duplicates=n_dup,
-        n_gaps=int(len(gaps)),
+        n_gaps=len(gaps),
         largest_gap=largest,
         n_negative_returns_extreme=n_extreme,
         n_zero_volume=n_zero_vol,
@@ -88,7 +87,6 @@ def detect_regimes(df: pd.DataFrame, *, window: int = 24 * 30) -> pd.Series:
         return pd.Series([], name="regime")
     ret = df["close"].pct_change()
     cum = ret.rolling(window).sum()
-    vol = ret.rolling(window).std() * np.sqrt(window)
 
     label = pd.Series("range", index=df.index)
     label[cum > 0.30] = "trend_up"

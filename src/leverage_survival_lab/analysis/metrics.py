@@ -64,5 +64,5 @@ def risk_of_ruin(p_win: float, b: float, *, ruin_pct: float = 0.5, n_units: int 
     if edge <= 0:
         return 1.0
     base = (1 - edge) / (1 + edge)
-    units = n_units if n_units is not None else int(round(1.0 / ruin_pct))
+    units = n_units if n_units is not None else round(1.0 / ruin_pct)
     return float(base ** units)
