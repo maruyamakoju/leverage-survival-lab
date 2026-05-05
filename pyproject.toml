@@ -62,8 +62,8 @@ agent = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourname/leverage-survival-lab"
-Issues = "https://github.com/yourname/leverage-survival-lab/issues"
+Homepage = "https://github.com/maruyamakoju/leverage-survival-lab"
+Issues = "https://github.com/maruyamakoju/leverage-survival-lab/issues"
 
 [project.scripts]
 lsl-fetch = "leverage_survival_lab.data.fetch:main"

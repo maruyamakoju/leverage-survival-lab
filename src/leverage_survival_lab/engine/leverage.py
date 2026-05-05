@@ -215,12 +215,16 @@ class LeverageEngine:
         return net
 
     def force_liquidate(self) -> None:
-        """清算処理 — 残り IM を没収し equity から差し引く(簡易版)。"""
+        """清算処理 — 残り IM を没収する。
+
+        Isolated margin では equity は 0 を下回らないため `max(0, ...)` でクランプする。
+        実取引でも保険ファンド/ADL でカバーされるので個人投資家の口座には反映されない。
+        """
         if self.position is None:
             return
-        # Isolated: IM 全額が消失。realized_pnl は -IM
-        self.equity -= self.position.initial_margin
-        self.realized_pnl -= self.position.initial_margin
+        loss = self.position.initial_margin
+        self.equity = max(0.0, self.equity - loss)
+        self.realized_pnl -= loss
         self.position = None
         self.n_liquidations += 1
 

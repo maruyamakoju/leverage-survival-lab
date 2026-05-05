@@ -78,6 +78,6 @@
 
 ## Lock 確認
 
-- [ ] git commit hash: _(初回コミット後に記入)_
-- [ ] 上記 commit を main ブランチに push
-- [ ] 公開 URL(GitHub): _(push後に記入)_
+- [x] git commit hash: `4694ff0ca7b224f16372342cdea8517278f5b875` (2026-05-05)
+- [x] 上記 commit を main ブランチに push
+- [x] 公開 URL(GitHub): https://github.com/maruyamakoju/leverage-survival-lab

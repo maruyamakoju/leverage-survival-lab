@@ -104,8 +104,9 @@ class TestLeverageEngineFlow:
         eng.open(side=Side.LONG, price=100.0, leverage=100)
         eng.force_liquidate()
         # Isolated 100x, IM = equity 全額(risk_fraction=1.0)
-        # → 清算で IM 全額消失、equity ≈ 0(手数料引いた残り)
-        assert eng.equity < 100.0  # 手数料分ほどしか残らない
+        # → 清算で IM 全額消失、equity は 0 でクランプ
+        assert eng.equity == 0.0
+        assert eng.n_liquidations == 1
 
     def test_double_open_raises(self) -> None:
         eng = self._eng()
