@@ -43,6 +43,10 @@ results/
 !results/figures/h3_edge_crossover.png
 !results/figures/results_dashboard.png
 !results/cross_margin_summary.parquet
+!results/live_demo/
+!results/live_demo/*.log
+!results/figures/live_demo_equity.png
+!results/figures/live_demo_pnl_hist.png
 
 # 実験管理
 mlruns/

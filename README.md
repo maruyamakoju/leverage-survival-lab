@@ -232,6 +232,22 @@ pytest -W ignore::RuntimeWarning
 | 7    | 包括レポート + 再現可能 notebook | これから |
 | 8    | 発信・公開                       | これから |
 
+## ライブ実演 — AI ボットを実際に動かしたら
+
+研究結果を「実演」するため、Web GUI (`lsl-web`) + AI トレーダー (`lsl-ai-trader`) を
+仮想金 $1M で Binance リアル価格に対して稼働させた。
+
+| 設計 | パラメータ | 経過 | 勝/負 | 累計 PnL | 残高DD |
+|------|-----------|-----:|:-----:|---------:|--------:|
+| **V1** (アグレッシブ) | 25倍 × 30秒hold × SL1%/TP1.5% | 47分 | **0/81** | -$281,000 | **-53.88%** |
+| **V2** (穏当) | 5倍 × 3分hold × SL1.5%/TP3% | 11分 | **2/4** | -$4,713 | -1.31% |
+
+V1 の 81/81 連敗は、本リポジトリの研究で示した **H4(高レバ + 高頻度 = 手数料で死)**
+の生きた証拠。詳細は [docs/blog_draft_v4_live_demo.md](docs/blog_draft_v4_live_demo.md)
++ [results/live_demo/](results/live_demo/) のログ。
+
+![live demo equity](results/figures/live_demo_equity.png)
+
 ## FAQ
 
 公開直後によく聞かれそうな質問への回答は [docs/FAQ.md](docs/FAQ.md) に集約しています。
