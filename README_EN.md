@@ -17,6 +17,7 @@ We sampled **~1,800 random 30-day windows** from 6+ years of Binance USDT-M Perp
 
 - **100x leverage 30-day survival rate = 0%.** 95% Wilson CI upper bound: **0.27%**
 - Result holds across all stop-loss levels (-0.5% to -5%, or none)
+- **Result holds across BTC / ETH / SOL** (the three largest perpetual-swap majors)
 - **Reducing position size to 5% of equity does not save 100x** — accumulated losses still kill the account
 - Holds across all market regimes (trend up, range, crash)
 - At ≥50x leverage, no statistically significant difference between naive strategies and random entry (Bonferroni-corrected)
@@ -31,7 +32,7 @@ To prevent post-hoc cherry-picking, we pre-registered 4 hypotheses in [docs/hypo
 |------------|--------|-----------------|
 | **H1**: 100x 30d survival < 10% regardless of stop loss | **Strongly supported** | 0/25 cells violate, **CI upper 0.27%** |
 | **H2**: Optimal stop-loss is interior (not boundary) | Partially supported | Interior solutions only at mid-leverage (5x, 10x) |
-| **H3**: Strategy edge dies at 10–20x | Not measurable | All 5 strategies have negative log-return at 1x already (fees) |
+| **H3**: Strategy edge dies at 10–20x | **Measurable (partially supported)** | `trend_filtered_sma` crossover: ~10-15x by mean equity, ~3-5x by log-return |
 | **H4**: ≥50x has no strategy advantage | **Supported** | All 8 comparisons: p > 0.00625 |
 
 Full report: [`results/hypothesis_test_real_btc_n2000.md`](results/hypothesis_test_real_btc_n2000.md)
