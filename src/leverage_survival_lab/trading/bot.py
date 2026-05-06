@@ -386,8 +386,20 @@ class AITrader:
         try:
             decision = self._decide(state)
         except Exception as e:
-            await self._log({"action": "DECIDE_ERROR", "error": str(e),
-                              "type": type(e).__name__, "tick": self.tick_idx})
+            # 再発時の根本原因特定のため、traceback と state の型情報を残す。
+            # V3.8 ライブで tick 67717 に "'float' object is not subscriptable" が
+            # 出たが str(e) だけでは _decide のどの行か特定できなかった。
+            import traceback
+            tb = traceback.format_exc().splitlines()
+            await self._log({
+                "action": "DECIDE_ERROR",
+                "error": str(e),
+                "type": type(e).__name__,
+                "tick": self.tick_idx,
+                "tb_last": tb[-3:] if len(tb) >= 3 else tb,
+                "state_pos_type": type(state.get("position")).__name__,
+                "state_price_type": type(state.get("price")).__name__,
+            })
             return
         if decision is None:
             return
