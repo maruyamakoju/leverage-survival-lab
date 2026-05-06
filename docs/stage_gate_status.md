@@ -5,6 +5,7 @@
 > **2026-05-07 update**:
 > - Round 1 (`scripts/gate0_eval.py`, N=200, 5 戦略 × 5 lev × 3 SL = 75 cells): **0/75 PASS**
 > - Round 2 (`scripts/gate0_round2.py`, trend_filtered_sma 単独 × window {30,90,180}d × 12 cells): **0/12 PASS × 全 window**
+> - Gate 1 PREVIEW (`scripts/gate1_preview.py`, BTC/ETH/SOL × trend_filtered_sma × window 90d × 12 cells): **0/12 PASS × 全アセット** (ETH/SOL は funding なし、preview 限定)
 > - 詳細は本ドキュメント末尾を参照。
 
 ## Gate 0 現状
@@ -227,3 +228,71 @@ Round 1 (探索) と Round 2 (戦略単独確認) を経た結論:
 - `results/gate0_round2_btc_w{30,90,180}_n200.parquet` (raw, 各 2,400 sims)
 - `results/gate0_round2_btc_w{30,90,180}_n200_summary.parquet` (各 12 cells)
 - `results/gate0_round2_btc_n200_report.md` (人間可読、3 window まとめ)
+
+## Gate 1 PREVIEW (cross-asset, 公式評価ではない)
+
+スクリプト: `scripts/gate1_preview.py` (window=90d, N=200, trend_filtered_sma 単独)
+
+> **PREVIEW 限定の理由**: 本環境では ccxt が Binance に到達できず ETH/SOL の funding rate を
+> 取得できなかった。BTC は実 funding 注入、ETH/SOL は funding なし (上方バイアスあり)。
+> 本評価は公式 Gate 1 として扱わず、判断材料 (preview) のみとする。
+
+### 結果サマリ (PASS は全アセットで 0/12)
+
+各アセットの上位 cell:
+
+| Asset | Top cell | Median ann log-ret | Sample Sharpe | Bust(90d) |
+|---|---|---:|---:|---:|
+| BTC (funding YES) | 1x SL=-5% | +19.15% | **+0.57** | 0.00% |
+| ETH (funding NO) | 2x SL=-5% | +25.34% | -0.19 | 27.00% |
+| SOL (funding NO) | 1x SL=-5% | +60.14% | **+0.63** | 13.57% |
+
+### 重要観察: アセット間で Sharpe が一貫しない
+
+`1x SL=-5%` (BTC で最良 Sharpe を出した cell) を 3 アセットで比較:
+
+| Asset | Median ann log-ret | Sample Sharpe | Bust |
+|---|---:|---:|---:|
+| BTC | +19.15% | **+0.57** | 0.00% |
+| ETH | +16.32% | **-0.18** | 6.50% |
+| SOL | +60.14% | **+0.63** | 13.57% |
+
+ETH で Sharpe がマイナスに沈む。これは戦略のエッジが **アセット特性 (ボラ・トレンド構造) に
+強く依存** することを意味し、Gate 1 が要求する「同パラメータで複数アセットを robustly 通す」
+という条件を、preview の段階で既に満たさない。
+
+### Cross-asset 最悪ケースの最大値 (worst-asset performance)
+
+各 cell について 3 アセットの最低値を見ると:
+
+- 1x SL=-5%: 最低 ETH +16.32% / 最低 ETH Sharpe -0.18
+- 2x SL=-5%: 最低 BTC +29.39% / 最低 ETH Sharpe -0.19
+- 1x SL=None: 最低 ETH +7.18% / 最低 ETH Sharpe -0.43
+- 5x cells: 多数のアセットで爆損 (SOL/ETH no-SL で -8400% など — 完全破綻)
+
+**全アセットで Sharpe > 0 を満たす cell は 0 件**。Gate 1 の本式評価でも (funding 込みなら
+さらに悪化するため) 通る見込みは無い。
+
+### 出力ファイル
+- `results/gate1_preview_{BTC,ETH,SOL}_n200.parquet` (raw)
+- `results/gate1_preview_{BTC,ETH,SOL}_n200_summary.parquet`
+- `results/gate1_preview_n200_report.md`
+
+## 総合結論 (2026-05-07 時点)
+
+- **公式 Gate 0 (Round 1+2)**: 6 戦略 + 戦略単独固定すべてで全 fail
+- **Gate 1 PREVIEW**: trend_filtered_sma が cross-asset で破綻 (ETH 落ち)
+- **実弾投入の正当性**: 現リポジトリの戦略群では一切ない。`CLAUDE.md`「実弾0円」ルールを
+  維持する根拠は強化された
+- **次の選択肢**:
+  1. **Round 3 — 戦略族の刷新**: SMA 系を諦め、ボラ・センチ・ファンディング逆張り・
+     オーダーフロー系の新ファミリーで Gate 0 から再スタート (新 pre-reg 必須)
+  2. **時間軸の変更**: 1h ではなく日足/週足、もしくは tick / 数分足
+  3. **アンサンブル**: 複数戦略のシグナル合成 (ただし Bonferroni 注意)
+  4. **撤退と公開**: pre-reg ルール 4 に従い「現リポジトリの戦略群では爆稼ぎ不可能」を
+     blog/twitter で発信して終わる選択肢。これも正規の研究成果
+
+**1 を選んだ場合**、今度こそ pre-reg を厳格化する (戦略を選ぶ前にエッジの存在仮説を別文書で
+明示し、それから実装してゲート評価する)。
+
+**4 を選んだ場合**、本ドキュメントと結果 parquet 群がそのままエビデンスとして公開される。
