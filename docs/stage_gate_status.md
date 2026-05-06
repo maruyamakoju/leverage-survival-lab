@@ -2,9 +2,10 @@
 
 [stage_gate.md](stage_gate.md) のゲート定義に対する現状把握。**まだどのゲートも公式には通過していない**。
 
-> **2026-05-07 update**: 第1回 Gate 0 評価を BTC で実行 (`scripts/gate0_eval.py`、N=200)。
-> 結果: **0 / 75 cells が公式 Gate 0 通過**。
-> 詳細は本ドキュメント末尾「Gate 0 — Round 1 結果」を参照。
+> **2026-05-07 update**:
+> - Round 1 (`scripts/gate0_eval.py`, N=200, 5 戦略 × 5 lev × 3 SL = 75 cells): **0/75 PASS**
+> - Round 2 (`scripts/gate0_round2.py`, trend_filtered_sma 単独 × window {30,90,180}d × 12 cells): **0/12 PASS × 全 window**
+> - 詳細は本ドキュメント末尾を参照。
 
 ## Gate 0 現状
 
@@ -157,3 +158,72 @@ funding 込みでも median +12〜22% をキープしている点は次ラウン
    DSR 評価する round を別途切る (Bonferroni を不要にする pre-reg を打つ)
 3. **Gate 1 cross-asset preview**: ETH/SOL に対して同条件で評価し、`trend_filtered_sma` が
    BTC 偶然でないかの感触を見る (公式 Gate 1 評価ではないが round 2 の判断材料)
+
+## Gate 0 — Round 2 結果 (2026-05-07, BTC, trend_filtered_sma 単独固定)
+
+スクリプト: `scripts/gate0_round2.py`
+Pre-reg: [stage_gate.md](stage_gate.md) Round 2 仕様 (commit `1062580`)
+セル: trend_filtered_sma × 4 レバ × 3 SL = 12 cells、window={30,90,180}d、各 N=200。
+
+### 公式判定: **3 window 全てで 0/12 PASS**
+
+| window | n_cells | PASS | best cell | best median ann log-ret | best sample Sharpe |
+|---|---:|---:|---|---:|---:|
+| 30d | 12 | 0 | 3x SL=-5% | +26.7% | -0.08 |
+| 90d | 12 | 0 | 3x SL=None | +102.7% | -0.85 |
+| 180d | 12 | 0 | 2x SL=-2% | +15.5% | +0.20 |
+
+### 重要な発見: sample Sharpe が構造的に < 1
+
+DSR は全 window × 全 cell で prob ≈ 0。だがこれは Bonferroni の問題ではなく、
+**trend_filtered_sma の生 Sharpe (annualized log-return ベース) が決して 1 を超えない** こと
+が原因。最高でも window=90d, 1x SL=-2% で sample Sharpe = +0.64。
+
+| window | top cell | sample Sharpe |
+|---|---|---:|
+| 30d | 1x SL=-5% | +0.36 |
+| 90d | 1x SL=-2% | +0.64 |
+| 180d | 1x SL=-2% | +0.38 |
+
+n_trials=1 (Bonferroni を完全に外しても) の DSR 閾値は概ね Sharpe ≈ 0 だが、
+**Gate 0 の意味のある運用には Sharpe > 1.0 (after-cost) は最低限必要**。
+そこに届いていない以上、戦略選択や閾値の問題ではなく **エッジが弱い**ことが本質。
+
+### Funding コストの window-length 依存性
+
+| window | median funding cost (1x SL=-5%) |
+|---|---:|
+| 30d | +0.02% |
+| 90d | +0.19% |
+| 180d | +0.70% |
+
+長期保有で funding が累積する。trend_filtered_sma は方向性ロング/ショートの保有が主で
+funding の累積が効く。180d window では SL なし設定の cells が壊滅 (1x: -3.1%, 5x: -914%) する
+最大要因が funding と方向逆転による累積損失。
+
+### 結論: Gate 0 を通せる戦略は現状のリポジトリに無い
+
+Round 1 (探索) と Round 2 (戦略単独確認) を経た結論:
+
+- 6 戦略中 `trend_filtered_sma` が最も "見込みあり" だが、リターン/リスク比 (Sharpe) で
+  Gate 0 を通せる水準ではない
+- Bonferroni を外した n_trials=1 のもとでも、Sharpe ~ 0.6 では Gate 0 の DSR > 0.95 を
+  通せない (DSR 0.95 ≈ Sharpe > 0 程度に緩むが、これは Gate 0 が想定する「本物のエッジ」と
+  解釈するには弱い)
+- これは [hypotheses.md](hypotheses.md) の H3「中レバで取引コストにより期待値マイナス」を
+  funding 込みで部分的に支持する結果として記録できる
+
+この時点で Gate 0 通過は事実上不可能。ただし以下の方向はまだ未検討:
+1. **アセット軸の拡張**: ETH/SOL で BTC 偶然でないかを確認 (Gate 1 preview として)
+2. **戦略族の刷新**: SMA 系を諦め、ボラ・センチメント・オーダーフロー・ファンディング逆張り
+   などのファミリーを試す (新 pre-reg で Round 3 として切る)
+3. **時間軸の変更**: 1h ではなく日足/週足、あるいはイントラデイ
+4. **アンサンブル**: 複数戦略のシグナル合成 (ただし Bonferroni 注意)
+
+実弾モードへの移行は **明確に現状の戦略群では正当化されない**。
+これは [stage_gate.md](stage_gate.md) 上位ルール 1 の「全ゲート通過まで実弾0円」を強く支える証拠。
+
+### 出力ファイル
+- `results/gate0_round2_btc_w{30,90,180}_n200.parquet` (raw, 各 2,400 sims)
+- `results/gate0_round2_btc_w{30,90,180}_n200_summary.parquet` (各 12 cells)
+- `results/gate0_round2_btc_n200_report.md` (人間可読、3 window まとめ)
