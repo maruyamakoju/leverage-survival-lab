@@ -6,6 +6,9 @@
 > - Round 1 (`scripts/gate0_eval.py`, N=200, 5 戦略 × 5 lev × 3 SL = 75 cells): **0/75 PASS**
 > - Round 2 (`scripts/gate0_round2.py`, trend_filtered_sma 単独 × window {30,90,180}d × 12 cells): **0/12 PASS × 全 window**
 > - Gate 1 PREVIEW (`scripts/gate1_preview.py`, BTC/ETH/SOL × trend_filtered_sma × window 90d × 12 cells): **0/12 PASS × 全アセット** (ETH/SOL は funding なし、preview 限定)
+> - Timeframe round (`scripts/gate0_round2_daily.py`, daily resample × {240,365,540} bars × 12 cells): **0/36 PASS**
+> - Round 3 (`scripts/gate0_round3.py`, FundingFlipStrategy threshold=0.0003 × 12 cells, BTC 90d): **0/12 PASS** (median trades = 1 — signal threshold が高すぎ機能不全だが pre-reg 通り保持)
+> - **総合**: SMA family + Funding family 両方 fail。現リポジトリの戦略では Gate 0 通過は不可能。
 > - 詳細は本ドキュメント末尾を参照。
 
 ## Gate 0 現状
@@ -278,21 +281,77 @@ ETH で Sharpe がマイナスに沈む。これは戦略のエッジが **ア�
 - `results/gate1_preview_{BTC,ETH,SOL}_n200_summary.parquet`
 - `results/gate1_preview_n200_report.md`
 
-## 総合結論 (2026-05-07 時点)
+## Timeframe Round (2026-05-07, BTC daily resample)
 
-- **公式 Gate 0 (Round 1+2)**: 6 戦略 + 戦略単独固定すべてで全 fail
-- **Gate 1 PREVIEW**: trend_filtered_sma が cross-asset で破綻 (ETH 落ち)
-- **実弾投入の正当性**: 現リポジトリの戦略群では一切ない。`CLAUDE.md`「実弾0円」ルールを
-  維持する根拠は強化された
-- **次の選択肢**:
-  1. **Round 3 — 戦略族の刷新**: SMA 系を諦め、ボラ・センチ・ファンディング逆張り・
-     オーダーフロー系の新ファミリーで Gate 0 から再スタート (新 pre-reg 必須)
-  2. **時間軸の変更**: 1h ではなく日足/週足、もしくは tick / 数分足
-  3. **アンサンブル**: 複数戦略のシグナル合成 (ただし Bonferroni 注意)
-  4. **撤退と公開**: pre-reg ルール 4 に従い「現リポジトリの戦略群では爆稼ぎ不可能」を
-     blog/twitter で発信して終わる選択肢。これも正規の研究成果
+スクリプト: `scripts/gate0_round2_daily.py` (1h を 1d に resample)
+window_bars = {240, 365, 540} = {8ヶ月, 1年, 1.5年}、各 N=200
 
-**1 を選んだ場合**、今度こそ pre-reg を厳格化する (戦略を選ぶ前にエッジの存在仮説を別文書で
-明示し、それから実装してゲート評価する)。
+### 結果: 0/36 PASS
 
-**4 を選んだ場合**、本ドキュメントと結果 parquet 群がそのままエビデンスとして公開される。
+| window | top cell | Median ann log-ret | Sample Sharpe | Bust |
+|---|---|---:|---:|---:|
+| 240d | 1x SL=None | +2.42% | +0.15 | 1.05% |
+| 365d | 1x SL=-5% | +2.11% | +0.06 | 12.63% |
+| 540d | 3x SL=None | +31.00% | -0.59 | 58.55% |
+
+Daily でも Sharpe は最良 +0.15。長期保有で no-SL 5x cells は完全破綻
+(365d 5x no-SL: median -2074%)。
+
+## Gate 0 Round 3 (2026-05-07, BTC, FundingFlipStrategy)
+
+スクリプト: `scripts/gate0_round3.py`
+Pre-reg: stage_gate.md Round 3 (commit `ba2f7f8`)
+パラメータ: threshold=0.0003 (年率約33% funding), lookback=24
+
+### 結果: 0/12 PASS (うち戦略機能不全)
+
+| Lev | SL | Median ann log-ret | Sample Sharpe | Bust(90d) | Median trades |
+|---:|---:|---:|---:|---:|---:|
+| 1x | -5% | +0.00% | -0.60 | 8.0% | **1** |
+| 1x | None | +0.00% | -0.63 | 12.6% | 1 |
+| 5x | None | +0.00% | -0.92 | 39.2% | 1 |
+
+**重要観察**: Median trades = 1 件 / 90d window。FundingFlip の threshold=0.0003
+(年率33% funding) は Binance BTC funding の実分布の極端側に位置し、90日間で signal が
+ほぼ立たない。事実上「機能していない」状態。
+
+**pre-reg 遵守判断**: threshold は事前固定済みなので、シグナルが出ないことも結果として保持。
+threshold を後から下げて再評価するのは pre-reg 違反。Round 4 で別 pre-reg を切る場合のみ
+パラメータ調整可。
+
+ただ threshold=0.0003 は funding_filter.py のクラスデフォルト値であり、設計時にどの程度の
+極端性を想定していたかは曖昧。Round 4 を切るなら threshold={0.0001, 0.0002} 程度の
+よりよく発火する閾値を試す価値あり (これは新 pre-reg)。
+
+## 総合結論 (2026-05-07 終了時)
+
+5 ラウンド (Round 1, Round 2, Gate 1 preview, Timeframe round, Round 3) の結果:
+
+| Round | 対象 | PASS / 評価 cells |
+|---|---|---:|
+| Round 1 | 5 strategies × 75 cells, BTC 1h, funding 込み | 0 / 75 |
+| Round 2 | trend_filtered_sma × {30,90,180}d × 12 cells, BTC 1h | 0 / 36 |
+| Gate 1 preview | trend_filtered_sma cross-asset (BTC funding込み, ETH/SOL なし) | 0 / 36 |
+| Timeframe round | trend_filtered_sma × daily × {240,365,540}bars | 0 / 36 |
+| Round 3 | FundingFlipStrategy 90d × 12 cells, BTC 1h | 0 / 12 |
+| **合計** | | **0 / 195** |
+
+**結論**:
+- 現リポジトリの 6 戦略 (random / sma_cross / rsi / bollinger / breakout / trend_filtered_sma /
+  funding_flip) は **どれも Gate 0 を通せない**
+- これは戦略のチューニングや multiple testing の問題ではない:
+  - SMA family: 生 Sharpe が構造的に < 1
+  - FundingFlip: threshold が極端で signal がほぼ立たない (Round 4 で再評価可)
+- 実弾投入は **明確に正当化されない**。`CLAUDE.md` の「実弾0円」ルールは
+  5 ラウンド分のエビデンスで強化済み
+
+### 次の選択肢
+
+1. **Round 4 — FundingFlip の threshold 調整 + 派生戦略**: threshold={0.0001, 0.0002} で
+   再評価 (新 pre-reg)。さらに ボラ breakout / オーダーフロー系を追加検証
+2. **撤退・公開**: 現状の 5 ラウンド分のエビデンスをまとめて blog / twitter で発信
+   (V7: 「Stage-Gate を通したら全戦略 fail だった話」)。pre-reg ルール 4 通りの正規の研究成果
+3. **両方並行**: Round 4 を準備しつつ V7 blog 下書きを完成させる
+
+実弾モードへの移行は **5 ラウンドのデータで明確に否定されている**。
+実弾0円ルールの撤回はこのデータが覆らない限りあり得ない。
