@@ -103,6 +103,47 @@ Round 1 の判定 (0/75 PASS) は変更しない。
 3. window_days を伸ばすことで sample Sharpe が引き出しやすくなる (時間方向の集約)
 4. Round 1 の cell-level 判定は維持。Round 2 で通った戦略は Gate 1 (cross-asset) で再現性確認
 
+### Round 3 仕様 (pre-registered, 2026-05-07 夜)
+
+Round 1 + Round 2 + Gate 1 preview + timeframe round の 4 結果すべてで
+trend_filtered_sma 系 (= テクニカル SMA ファミリー) が Gate 0 を通せないことが確定。
+これは戦略のチューニング不足ではなく、SMA family のエッジ自体が cost 込みでは
+存続しないという結論。
+
+そこで Round 3 では **戦略ファミリーを刷新** する:
+
+**戦略の事前固定**:
+- 戦略 = `FundingFlipStrategy` (`src/leverage_survival_lab/strategies/funding_filter.py`)
+- パラメータ事前固定: `threshold=0.0003` (~年率33% funding), `lookback=24` (24h 移動平均)
+- 戦略選択の理由 (pre-reg として残す):
+  1. **エッジの源泉がテクニカル指標ではない**: funding rate は perpetual swap の
+     需給メカニズムで「過熱した側が支払う」構造のため、構造的な mean-reversion 圧力を持つ
+  2. SMA family が完全に fail した今、external signal (funding) ベースの戦略を試す価値が高い
+  3. funding_filter.py は実装済みで、Round 1 のグリッドには組み込まれていなかった (Round 1 結果に未測定)
+
+**サンプル設計**:
+- window_days = **90** (Round 2 のスイートスポット、SMA フィルタの warmup 制約も無いので 30d に短縮しない)
+- N = 200 ランダム窓 / seed = 20260507
+- レバレッジ = {1, 2, 3, 5}x
+- SL = {None, -0.02, -0.05}
+- TP = {None}
+- 実 Binance BTC funding 注入 (バックテスト側 cost) + funding signal source 同 series
+- n_trials = 12 (lev × SL, 戦略は事前固定)
+
+**判定基準**:
+- Gate 0 三条件 (median ann log-ret > 0 / DSR > 0.95 / bust < 5%) はそのまま
+- Round 3 で通った場合、Gate 1 (cross-asset) に進む
+- 通らなかった場合、SMA family + Funding family が両方 fail したことを根拠に
+  「現リポジトリの戦略では実弾投入の根拠なし」を最終結論として公開する
+
+**改訂理由補足**:
+- Round 3 は Round 2 と独立に評価する (戦略族が違うので Bonferroni は分離)
+- Round 2 の結果は変更しない
+- "Round 1 で 6 戦略中 funding_flip だけ評価しなかった" 件は、当時 grid runner が
+  funding_series を strategy に注入する経路を持っていなかった技術的制約による。
+  Round 3 ではこの制約を script 側で解消する (grid.py を変えず、Round 3 専用スクリプトで
+  BacktestConfig + run_backtest を直接呼ぶ)
+
 ---
 
 ## Gate 1 — Cross-asset robustness
