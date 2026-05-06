@@ -55,6 +55,9 @@ class BotConfig:
     candle_seconds: int = 60     # RSI 用に何秒で1本のロウソクにするか
     bootstrap_parquet: str | None = None  # 起動時に過去 1m データから minute_closes を初期化
     breakout_window: int = 30    # momentum mode で何バーの高安をブレイク判定に使うか
+    trend_fast: int = 20
+    trend_slow: int = 50
+    trend_window: int = 200
 
 
 class AITrader:
@@ -86,6 +89,8 @@ class AITrader:
         self.last_heartbeat_tick = 0
         # WS state.pos が None を連続で見た回数(SL/TP/清算 検知用)
         self._null_pos_streak: int = 0
+        # trend_sma で SL/TP 等により外部クローズされた場合、同じシグナルで即再エントリーしない。
+        self._blocked_trend_signal: int = 0
 
     # ---- helpers ----
     def _zscore(self) -> float:
@@ -155,6 +160,28 @@ class AITrader:
         rs = avg_gain / avg_loss
         return 100.0 - 100.0 / (1.0 + rs)
 
+    def _trend_sma_signal(self) -> int:
+        """Return -1, 0, or +1 from filtered SMA state on completed candle closes."""
+        need = max(self.cfg.trend_fast, self.cfg.trend_slow, self.cfg.trend_window)
+        if len(self.minute_closes) < need:
+            return 0
+        try:
+            arr = [float(x) for x in self.minute_closes if isinstance(x, int | float)]
+        except (TypeError, ValueError):
+            return 0
+        if len(arr) < need:
+            return 0
+
+        fast = sum(arr[-self.cfg.trend_fast:]) / self.cfg.trend_fast
+        slow = sum(arr[-self.cfg.trend_slow:]) / self.cfg.trend_slow
+        trend = sum(arr[-self.cfg.trend_window:]) / self.cfg.trend_window
+        close = arr[-1]
+        if fast > slow and close > trend:
+            return 1
+        if fast < slow and close < trend:
+            return -1
+        return 0
+
     async def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
         if self.client is None:
             self.client = httpx.AsyncClient(base_url=self.cfg.base_url, timeout=10)
@@ -201,6 +228,15 @@ class AITrader:
                 return ("close", f"保有 {held_secs:.0f}秒 (上限 {cfg.hold_max_seconds}秒) 超過")
             if cfg.hold_max_seconds <= 0 and held_ticks >= cfg.hold_max_ticks:
                 return ("close", f"保有 {held_ticks}t (上限 {cfg.hold_max_ticks}t) 超過")
+
+            if cfg.strategy == "trend_sma":
+                sig = self._trend_sma_signal()
+                side = state_pos.get("side") if isinstance(state_pos, dict) else None
+                if side == "long" and sig <= 0:
+                    return ("close", f"trend_sma exit: long signal lost (sig={sig})")
+                if side == "short" and sig >= 0:
+                    return ("close", f"trend_sma exit: short signal lost (sig={sig})")
+                return None
 
             # RSI 戦略時: RSI が中立(50)に戻ったら early exit
             if cfg.strategy == "rsi" and held_secs >= 60:  # 最低 60秒は保有
@@ -262,6 +298,25 @@ class AITrader:
                 return ("long", f"BO上抜け: {current:.0f} > {hi:.0f} (×{cfg.breakout_window}本高値)")
             if current < lo * (1 - buf):
                 return ("short", f"BO下抜け: {current:.0f} < {lo:.0f} (×{cfg.breakout_window}本安値)")
+            return None
+
+        # ---- trend_sma mode ----
+        if cfg.strategy == "trend_sma":
+            sig = self._trend_sma_signal()
+            if self._blocked_trend_signal and sig != self._blocked_trend_signal:
+                self._blocked_trend_signal = 0
+            if sig == self._blocked_trend_signal:
+                return None
+            if sig > 0:
+                return ("long", (
+                    f"trend_sma fast={cfg.trend_fast} slow={cfg.trend_slow} "
+                    f"trend={cfg.trend_window}: long"
+                ))
+            if sig < 0:
+                return ("short", (
+                    f"trend_sma fast={cfg.trend_fast} slow={cfg.trend_slow} "
+                    f"trend={cfg.trend_window}: short"
+                ))
             return None
 
         # ---- zscore (デフォルト) ----
@@ -326,6 +381,7 @@ class AITrader:
             if ok:
                 self.position_opened_at = self.tick_idx
                 self.position_opened_ts = self.now_ts
+                self._blocked_trend_signal = 0
             await self._log({"action": f"open_{action}", "reason": reason, "price": price,
                               "lev": lev, "size": size, "ok": ok, "result": msg})
         elif action == "close":
@@ -364,6 +420,9 @@ class AITrader:
                 rsi = self._rsi()
                 extra["rsi"] = round(rsi, 2) if rsi is not None else None
                 extra["candles"] = len(self.minute_closes)
+            elif self.cfg.strategy == "trend_sma":
+                extra["trend_sma_signal"] = self._trend_sma_signal()
+                extra["candles"] = len(self.minute_closes)
             await self._log({"action": "HEARTBEAT", "tick": self.tick_idx,
                               "price": price, "pos": state["position"] is not None,
                               "equity": state["equity"], "total": state["total_value"],
@@ -382,6 +441,8 @@ class AITrader:
         # 同期: ローカルの position_opened_at と実際のポジ状態のズレを修正
         if state["position"] is None and self.position_opened_at is not None:
             # SL/TP が発火して閉じている可能性
+            if self.cfg.strategy == "trend_sma":
+                self._blocked_trend_signal = self._trend_sma_signal()
             self.position_opened_at = None
         try:
             decision = self._decide(state)
@@ -433,7 +494,11 @@ class AITrader:
             "leverage": self.cfg.leverage, "size_pct": self.cfg.size_pct,
             "sl_pct": self.cfg.sl_pct, "tp_pct": self.cfg.tp_pct,
             "strategy": self.cfg.strategy,
+            "hold_max_seconds": self.cfg.hold_max_seconds,
             "bootstrap_candles": bootstrap_n,
+            "trend_fast": self.cfg.trend_fast,
+            "trend_slow": self.cfg.trend_slow,
+            "trend_window": self.cfg.trend_window,
         }})
         # 接続リトライループ
         while not self.stopped:
@@ -474,6 +539,12 @@ PRESETS: dict[str, dict[str, Any]] = {
         breakout_window=30,
         hold=0,
     ),
+    "tournament-trend-sma": {
+        "strategy": "trend_sma", "leverage": 1.0, "size": 0.4, "sl": 5.0, "tp": 100.0,
+        "trend_fast": 20, "trend_slow": 50, "trend_window": 200,
+        "candle_seconds": 3600,
+        "hold": 0, "hold_secs": 24 * 60 * 60,
+    },
 }
 
 
@@ -482,7 +553,7 @@ def main() -> None:
     p.add_argument("--base-url", default="http://127.0.0.1:8765")
     p.add_argument("--preset", choices=sorted(PRESETS), default=None,
                    help="トーナメント勝者プリセットでパラメータを上書き")
-    p.add_argument("--strategy", choices=["zscore", "rsi", "momentum"], default="zscore")
+    p.add_argument("--strategy", choices=["zscore", "rsi", "momentum", "trend_sma"], default="zscore")
     p.add_argument("--leverage", type=float, default=25.0)
     p.add_argument("--size", type=float, default=0.30, help="0..1")
     p.add_argument("--sl", type=float, default=1.5)
@@ -504,6 +575,9 @@ def main() -> None:
                    help="起動時に minute_closes に注入する 1m parquet パス")
     p.add_argument("--breakout-window", type=int, default=30,
                    help="momentum mode で N 分間の高安ブレイク判定に使うバー数")
+    p.add_argument("--trend-fast", type=int, default=20)
+    p.add_argument("--trend-slow", type=int, default=50)
+    p.add_argument("--trend-window", type=int, default=200)
     p.add_argument("--bust-at", type=float, default=0.30,
                    help="残高がこの比率を割ったら停止")
     p.add_argument("--log", default="results/ai_trader_log.jsonl")
@@ -525,6 +599,9 @@ def main() -> None:
         candle_seconds=args.candle_seconds,
         bootstrap_parquet=args.bootstrap,
         breakout_window=args.breakout_window,
+        trend_fast=args.trend_fast,
+        trend_slow=args.trend_slow,
+        trend_window=args.trend_window,
         log_path=Path(args.log),
     )
     trader = AITrader(cfg)

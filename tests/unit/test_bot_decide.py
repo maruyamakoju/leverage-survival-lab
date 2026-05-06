@@ -14,8 +14,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-import pytest
-
 from leverage_survival_lab.trading.bot import AITrader, BotConfig
 
 
@@ -178,6 +176,70 @@ def test_decide_momentum_warmup_blocks_entry() -> None:
         t.minute_closes.append(px)
     t.live_candle_count = 5  # warmup 不足
     assert t._decide(_state()) is None
+
+
+def test_decide_trend_sma_returns_long_on_filtered_uptrend() -> None:
+    t = AITrader(BotConfig(strategy="trend_sma", trend_fast=20, trend_slow=50, trend_window=200))
+    t.now_ts = datetime.now(UTC)
+    for px in [100.0] * 150 + [102.0] * 30 + [110.0] * 20:
+        t.minute_closes.append(px)
+
+    decision = t._decide(_state(price=110.0))
+    assert decision is not None
+    assert decision[0] == "long"
+
+
+def test_decide_trend_sma_returns_short_on_filtered_downtrend() -> None:
+    t = AITrader(BotConfig(strategy="trend_sma", trend_fast=20, trend_slow=50, trend_window=200))
+    t.now_ts = datetime.now(UTC)
+    for px in [100.0] * 150 + [98.0] * 30 + [90.0] * 20:
+        t.minute_closes.append(px)
+
+    decision = t._decide(_state(price=90.0))
+    assert decision is not None
+    assert decision[0] == "short"
+
+
+def test_decide_trend_sma_closes_long_when_signal_is_lost() -> None:
+    t = AITrader(BotConfig(
+        strategy="trend_sma",
+        trend_fast=20,
+        trend_slow=50,
+        trend_window=200,
+        hold_max_seconds=24 * 60 * 60,
+    ))
+    t.now_ts = datetime.now(UTC)
+    t.position_opened_at = t.tick_idx - 10
+    t.position_opened_ts = t.now_ts - timedelta(seconds=120)
+    for px in [100.0] * 200:
+        t.minute_closes.append(px)
+
+    decision = t._decide(_state(position={"side": "long"}, price=100.0))
+    assert decision is not None
+    assert decision[0] == "close"
+    assert "trend_sma exit" in decision[1]
+
+
+def test_decide_trend_sma_blocks_same_signal_reentry_after_external_close() -> None:
+    t = AITrader(BotConfig(strategy="trend_sma", trend_fast=20, trend_slow=50, trend_window=200))
+    t.now_ts = datetime.now(UTC)
+    for px in [100.0] * 150 + [102.0] * 30 + [110.0] * 20:
+        t.minute_closes.append(px)
+    t._blocked_trend_signal = 1
+
+    assert t._decide(_state(price=110.0)) is None
+
+
+def test_decide_trend_sma_allows_reentry_after_signal_changes() -> None:
+    t = AITrader(BotConfig(strategy="trend_sma", trend_fast=20, trend_slow=50, trend_window=200))
+    t.now_ts = datetime.now(UTC)
+    for px in [100.0] * 150 + [98.0] * 30 + [90.0] * 20:
+        t.minute_closes.append(px)
+    t._blocked_trend_signal = 1
+
+    decision = t._decide(_state(price=90.0))
+    assert decision is not None
+    assert decision[0] == "short"
 
 
 # ---------- スモーク: 何度連続で呼んでも落ちない ----------
