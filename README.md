@@ -22,6 +22,31 @@ Binance USDT-M Perpetual の **BTC/USDT 6 年分(2020-01〜2026-05)** から 30 
 
 「適切な損切で100倍レバでも勝てる」という SNS の俗説は、データ上は完全に否定される。
 
+### 2026-05-07 update — Stage-Gate プロトコルと「低レバですら勝てない」追加検証
+
+「H1〜H4 を確認しただけでなく、低レバ帯で実弾投入が筋として通るか」を pre-register された
+**Stage-Gate プロトコル** ([docs/stage_gate.md](docs/stage_gate.md)) で詰めた。
+
+cost-aware backtest (taker 0.04% + slippage 0.05% + 実 BTC funding) で 5 ラウンドを実行:
+
+| Round | 対象 | PASS / 評価 cells |
+|---|---|---:|
+| Round 1 | 5 戦略 × 75 cells, BTC 1h, funding 込み | 0 / 75 |
+| Round 2 | trend_filtered_sma 単独 × 3 windows × 12 cells | 0 / 36 |
+| Gate 1 preview | trend_filtered_sma cross-asset (BTC/ETH/SOL) | 0 / 36 |
+| Timeframe round | trend_filtered_sma × daily × 3 windows | 0 / 36 |
+| Round 3 | FundingFlipStrategy 90d × 12 cells | 0 / 12 |
+| **合計** | | **0 / 195** |
+
+**核心の発見**:
+- trend_filtered_sma の生 Sharpe (after-cost) は最良で **+0.64** どまり。エッジが構造的に弱く、cost に飲まれる
+- BTC で Sharpe +0.57 の cell が **ETH では -0.18** に転落。アセット依存
+- daily resample でも Sharpe 最良 +0.15。timeframe では救えない
+- FundingFlip は threshold=0.0003 が実 funding 分布の極端側で 90d に signal 1 回しか立たず機能不全 (pre-reg 通り保持)
+
+**結論**: 現リポジトリの 7 戦略では Gate 0 を通せる戦略は無い。実弾投入は明確に正当化されない。
+詳細は [docs/stage_gate_status.md](docs/stage_gate_status.md)、長文記事は [docs/blog_draft_v7_stage_gate.md](docs/blog_draft_v7_stage_gate.md)。
+
 ## ハイライト図表
 
 ### サンプル equity curve(BTC 2024年1月)

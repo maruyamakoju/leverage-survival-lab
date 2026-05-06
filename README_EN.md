@@ -24,6 +24,33 @@ We sampled **~1,800 random 30-day windows** from 6+ years of Binance USDT-M Perp
 
 The narrative "100x leverage works with proper stop loss" is rejected by the data.
 
+### 2026-05-07 update — Stage-Gate protocol: 0 / 195 cells pass
+
+To stop "what if I quietly slip in real money once an edge shows up" from running my brain,
+I pre-registered a six-stage gate ([docs/stage_gate.md](docs/stage_gate.md)) and ran five
+cost-aware backtest rounds in one day. Every round failed.
+
+| Round | Scope | Pass / cells |
+|---|---|---:|
+| Round 1 | 5 strategies × 75 cells, BTC 1h, funding included | 0 / 75 |
+| Round 2 | trend_filtered_sma alone × 3 windows × 12 cells | 0 / 36 |
+| Gate 1 preview | trend_filtered_sma cross-asset (BTC/ETH/SOL) | 0 / 36 |
+| Timeframe round | trend_filtered_sma × daily × 3 windows | 0 / 36 |
+| Round 3 | FundingFlipStrategy 90d × 12 cells | 0 / 12 |
+| **Total** | | **0 / 195** |
+
+Key findings:
+- trend_filtered_sma's after-cost sample sharpe peaks at **+0.64** — far below the >1
+  needed for real trading
+- The cell with sharpe +0.57 on BTC drops to **-0.18 on ETH**. Edge is asset-conditional.
+- Daily resample tops at sharpe +0.15. Timeframe doesn't save it.
+- FundingFlip threshold=0.0003 is in the tail of actual funding distribution; signal
+  fires only once per 90d on average (effectively broken, kept per pre-reg)
+
+Conclusion: no strategy in this repo justifies real-money trading.
+See [docs/stage_gate_status.md](docs/stage_gate_status.md) for the full snapshot and
+[docs/blog_draft_v7_stage_gate.md](docs/blog_draft_v7_stage_gate.md) for the long write-up.
+
 ## Pre-registered hypotheses
 
 To prevent post-hoc cherry-picking, we pre-registered 4 hypotheses in [docs/hypotheses.md](docs/hypotheses.md), locked at git commit `4694ff0` (2026-05-05).
