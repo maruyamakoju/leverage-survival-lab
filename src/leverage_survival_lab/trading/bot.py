@@ -52,6 +52,7 @@ class BotConfig:
     rsi_overbought: float = 70.0
     candle_seconds: int = 60     # RSI 用に何秒で1本のロウソクにするか
     bootstrap_parquet: str | None = None  # 起動時に過去 1m データから minute_closes を初期化
+    breakout_window: int = 30    # momentum mode で何バーの高安をブレイク判定に使うか
 
 
 class AITrader:
@@ -210,6 +211,23 @@ class AITrader:
                 return ("long", f"RSI={rsi:.1f} < {cfg.rsi_oversold} (oversold)")
             if rsi > cfg.rsi_overbought:
                 return ("short", f"RSI={rsi:.1f} > {cfg.rsi_overbought} (overbought)")
+            return None
+
+        # ---- momentum mode ---- (ブレイクアウト追従)
+        if cfg.strategy == "momentum":
+            if len(self.minute_closes) < cfg.breakout_window + 1:
+                return None
+            arr = list(self.minute_closes)
+            window = arr[-cfg.breakout_window - 1 : -1]   # 直近 N バー(現在は除く)
+            current = arr[-1]
+            hi = max(window)
+            lo = min(window)
+            # ブレイクアウト判定: 0.05% 以上の超過で確定(ノイズ除外)
+            buf = 0.0005
+            if current > hi * (1 + buf):
+                return ("long", f"BO上抜け: {current:.0f} > {hi:.0f} (×{cfg.breakout_window}本高値)")
+            if current < lo * (1 - buf):
+                return ("short", f"BO下抜け: {current:.0f} < {lo:.0f} (×{cfg.breakout_window}本安値)")
             return None
 
         # ---- zscore (デフォルト) ----
@@ -375,7 +393,7 @@ class AITrader:
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--base-url", default="http://127.0.0.1:8765")
-    p.add_argument("--strategy", choices=["zscore", "rsi"], default="zscore")
+    p.add_argument("--strategy", choices=["zscore", "rsi", "momentum"], default="zscore")
     p.add_argument("--leverage", type=float, default=25.0)
     p.add_argument("--size", type=float, default=0.30, help="0..1")
     p.add_argument("--sl", type=float, default=1.5)
@@ -389,6 +407,8 @@ def main() -> None:
     p.add_argument("--candle-seconds", type=int, default=60)
     p.add_argument("--bootstrap", default=None,
                    help="起動時に minute_closes に注入する 1m parquet パス")
+    p.add_argument("--breakout-window", type=int, default=30,
+                   help="momentum mode で N 分間の高安ブレイク判定に使うバー数")
     p.add_argument("--bust-at", type=float, default=0.30,
                    help="残高がこの比率を割ったら停止")
     p.add_argument("--log", default="results/ai_trader_log.jsonl")
@@ -404,6 +424,7 @@ def main() -> None:
         rsi_oversold=args.rsi_oversold, rsi_overbought=args.rsi_overbought,
         candle_seconds=args.candle_seconds,
         bootstrap_parquet=args.bootstrap,
+        breakout_window=args.breakout_window,
         log_path=Path(args.log),
     )
     trader = AITrader(cfg)
