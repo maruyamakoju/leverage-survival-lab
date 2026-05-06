@@ -2,6 +2,10 @@
 
 [stage_gate.md](stage_gate.md) のゲート定義に対する現状把握。**まだどのゲートも公式には通過していない**。
 
+> **2026-05-07 update**: 第1回 Gate 0 評価を BTC で実行 (`scripts/gate0_eval.py`、N=200)。
+> 結果: **0 / 75 cells が公式 Gate 0 通過**。
+> 詳細は本ドキュメント末尾「Gate 0 — Round 1 結果」を参照。
+
 ## Gate 0 現状
 
 > 戦略単独で、コスト込みで期待値プラスか。
@@ -87,4 +91,69 @@ bot の `trend_sma` (20/50/200 SMA) はバックテストの `trend_filtered_sma
 - Gate 0 が**通る戦略が一つも見つかっていない**段階。
 - 実弾投入は Gate 0-5 すべて通った上で、本人が `CLAUDE.md` の「実弾0円」ルールを
   別コミットで撤回するまで行わない (これは [stage_gate.md](stage_gate.md) の上位ルール)。
-- 次の作業: funding を grid に注入して、cost-aware Gate 0 評価を BTC 単体で回す。
+
+## Gate 0 — Round 1 結果 (2026-05-07, BTC, N=200, funding 注入済)
+
+スクリプト: `scripts/gate0_eval.py`
+入力: `data/raw/binance_BTCUSDT_1h.parquet` + `binance_BTCUSDT_funding.parquet` (2020-01-01 〜 2026-05-05)
+セル: 5 戦略 × 5 レバ × 3 SL × 1 TP = 75 cells、各 N=200 ランダム30日窓 (seed=20260507)
+コスト: taker 0.04% + 片道 0.05% slippage + 実 funding rate (8h 刻み)
+
+### 公式判定: **0 / 75 cells PASS**
+
+3 条件 (median annual log-ret > 0 / DSR prob > 0.95 / 30d bust < 5%) を全て満たすセルは無し。
+
+### DSR 失格は構造的問題 (要 pre-reg 改訂検討)
+
+全 cells で `deflated_sharpe_prob ≈ 0`。サンプル Sharpe を見ると最良でも 0.36、
+ほとんど負値。Bonferroni n_trials=75 を超えるには Sharpe > 2.4 程度必要だが、
+30日 single window の cross-sectional sample で算出する Sharpe は性質上低くなる
+(window 内 PnL volatility が大きい)。
+
+これは Gate 0 の閾値設計が **window=30d だと事実上達成不可能** であることを意味する。
+別コミットで [stage_gate.md](stage_gate.md) に注釈を追加し、round 2 で以下のいずれかを
+検討する:
+1. window を 90d / 180d に伸ばす (Sharpe を引き出しやすくする)
+2. DSR の n_periods を年単位に正規化する (時系列としての Sharpe 計算)
+3. DSR は維持しつつ、別のメタクライテリア (median return + bust rate) を二段階目に追加
+
+### 観察: DSR 抜きの 2 条件パス cell
+
+参考までに、median annual log-ret > 0 と 30d bust < 5% の 2 条件のみパスした 5 cells:
+
+| Strategy | Lev | SL | Median ann log-ret | 30d bust | Median fees | Median funding |
+|---|---:|---:|---:|---:|---:|---:|
+| trend_filtered_sma | 1x | -5.0% | +12.09% | **+0.00%** | +0.32% | +0.02% |
+| trend_filtered_sma | 1x | None | +4.67% | +1.51% | +0.09% | +0.02% |
+| trend_filtered_sma | 2x | -5.0% | +22.45% | +0.50% | +0.64% | +0.05% |
+| sma_cross | 1x | -5.0% | +5.32% | +0.00% | +0.32% | +0.03% |
+| breakout | 1x | None | +5.19% | +1.51% | +0.09% | +0.06% |
+
+これらは **公式 Gate 0 を通過していない**。あくまで「次にどこを攻めるかの示唆」。
+`trend_filtered_sma` (= bot V3.9 `trend_sma` と同一ロジック) が低レバ × 強 SL で
+funding 込みでも median +12〜22% をキープしている点は次ラウンドの起点になりうる。
+
+### Round 1 から得られた含意
+
+- **H3 部分修正**: 「1x ですら全戦略が手数料負け」だったのは旧グリッドで 6 戦略中
+  `trend_filtered_sma` が含まれていなかったため。`trend_filtered_sma` 系は funding 込みでも
+  低レバで median +。これは H3 の主張を弱めるので [hypotheses.md](hypotheses.md) の脚注に追記する価値あり (公開時)
+- **bot V3.9 `trend_sma`** は単独評価ではバックテストで最も成績が良い。Gate 0 の DSR を
+  通せていないが、cross-asset (Gate 1) で再現するか確認する優先度は高い
+- **Bonferroni 補正の効きすぎ**: 75 cells を同時に評価する設計のままだと、
+  どんな良い戦略でも DSR で叩き落とされる。round 2 では戦略を事前に 1 個固定 (n_trials=1) して
+  確認する pre-reg を別途切る方が筋
+
+### 出力ファイル
+- `results/gate0_btc_n200.parquet` (15,000 sims raw)
+- `results/gate0_btc_n200_summary.parquet` (75 cells aggregated)
+- `results/gate0_btc_n200_report.md` (人間可読)
+
+### 次のアクション
+
+1. **pre-reg 改訂**: [stage_gate.md](stage_gate.md) に「DSR は window 期間/サンプル設計に強く
+   依存する」注記を追加し、round 2 のメタクライテリア (例: 90d window) を追記する
+2. **戦略事前固定 round**: `trend_filtered_sma` を**事前に1戦略**として固定し、n_trials=1 で
+   DSR 評価する round を別途切る (Bonferroni を不要にする pre-reg を打つ)
+3. **Gate 1 cross-asset preview**: ETH/SOL に対して同条件で評価し、`trend_filtered_sma` が
+   BTC 偶然でないかの感触を見る (公式 Gate 1 評価ではないが round 2 の判断材料)

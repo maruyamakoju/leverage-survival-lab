@@ -75,10 +75,16 @@ class GridTask:
     data_id: str  # データセット識別子(例 "synthetic_24h_30d_seedXX" or "binance_BTCUSDT_1h_2024")
 
 
-def _run_one(task: GridTask, df: pd.DataFrame) -> dict[str, Any]:
+def _run_one(
+    task: GridTask,
+    df: pd.DataFrame,
+    funding_rates: pd.Series | None = None,
+) -> dict[str, Any]:
     """単一シミュレーションを実行し、結果サマリ dict を返す。
 
     例外時は ``error`` フィールド付きの行を返す(グリッド全体を止めない)。
+
+    funding_rates: 全期間のファンディングレート系列(8h刻み rate)。Noneなら 0。
     """
     try:
         strat: Strategy = STRATEGY_FACTORIES[task.strategy_name](task.seed)
@@ -89,14 +95,17 @@ def _run_one(task: GridTask, df: pd.DataFrame) -> dict[str, Any]:
             take_profit=task.take_profit,
             risk_fraction=task.risk_fraction,
             initial_equity=settings.initial_equity_usdt,
+            funding_rates=funding_rates,
         )
         res = run_backtest(df, sig, cfg)
         eq = res.equity_curve
+        eq0 = float(eq.iloc[0])
         return {
             **asdict(task),
             "final_equity": res.final_equity,
-            "total_return": float(eq.iloc[-1] / eq.iloc[0] - 1.0),
+            "total_return": float(eq.iloc[-1] / eq0 - 1.0),
             "max_drawdown": float(max_drawdown(eq)),
+            "min_equity_ratio": float(eq.min() / eq0),
             "sharpe": float(sharpe_ratio(eq, periods_per_year=24 * 365)),
             "n_liquidations": res.n_liquidations,
             "is_bust": res.is_bust,
@@ -111,6 +120,7 @@ def _run_one(task: GridTask, df: pd.DataFrame) -> dict[str, Any]:
             "final_equity": float("nan"),
             "total_return": float("nan"),
             "max_drawdown": float("nan"),
+            "min_equity_ratio": float("nan"),
             "sharpe": float("nan"),
             "n_liquidations": -1,
             "is_bust": True,
@@ -136,8 +146,12 @@ def run_grid_synthetic(
     vol: float = 0.015,
     n_workers: int | None = None,
     show_progress: bool = True,
+    funding_rates: pd.Series | None = None,
 ) -> pd.DataFrame:
-    """合成データで グリッド実験を回す(各 seed ごとに新しい価格パスを生成)。"""
+    """合成データで グリッド実験を回す(各 seed ごとに新しい価格パスを生成)。
+
+    funding_rates: 通常 None。合成データに対応する funding 系列があれば使用可。
+    """
     n_workers = n_workers or max(1, (os.cpu_count() or 2) - 1)
     tasks: list[GridTask] = []
     cached_data: dict[int, tuple[str, pd.DataFrame]] = {}
@@ -162,10 +176,10 @@ def run_grid_synthetic(
             it = tqdm(it, total=len(tasks), mininterval=2.0, miniters=500)  # type: ignore[assignment]
         for t in it:
             df = cached_data[t.seed][1]
-            results.append(_run_one(t, df))
+            results.append(_run_one(t, df, funding_rates))
     else:
         # 各 task に必要な df を同梱し pool で分散
-        payloads = [(t, cached_data[t.seed][1]) for t in tasks]
+        payloads = [(t, cached_data[t.seed][1], funding_rates) for t in tasks]
         with mp.get_context("spawn").Pool(n_workers) as pool:
             it = pool.imap_unordered(_grid_worker, payloads, chunksize=8)
             if show_progress:
@@ -176,8 +190,13 @@ def run_grid_synthetic(
     return _safe_records_to_df(results)
 
 
-def _grid_worker(payload: tuple[GridTask, pd.DataFrame]) -> dict[str, Any]:
-    task, df = payload
+def _grid_worker(
+    payload: tuple[GridTask, pd.DataFrame] | tuple[GridTask, pd.DataFrame, pd.Series | None],
+) -> dict[str, Any]:
+    if len(payload) == 3:
+        task, df, fr = payload  # type: ignore[misc]
+        return _run_one(task, df, fr)
+    task, df = payload  # type: ignore[misc]
     return _run_one(task, df)
 
 
@@ -233,8 +252,13 @@ def run_grid_realdata(
     seed: int = 0,
     n_workers: int = 1,
     show_progress: bool = True,
+    funding_rates: pd.Series | None = None,
 ) -> pd.DataFrame:
-    """実データに対しランダム期間で n_windows 個のサンプルを切り、各 (戦略×レバ×SL×TP) で回す。"""
+    """実データに対しランダム期間で n_windows 個のサンプルを切り、各 (戦略×レバ×SL×TP) で回す。
+
+    funding_rates: 全期間 (df の index 範囲を覆う) の funding rate 系列。
+    BacktestConfig 側で各 window の index に reindex(fill=0) されるので、global series で OK。
+    """
     windows = random_window_slices(df, window_bars=window_bars, n_windows=n_windows, seed=seed)
     cached = dict(windows)
 
@@ -257,9 +281,9 @@ def run_grid_realdata(
         if show_progress:
             it = tqdm(it, total=len(tasks), mininterval=2.0, miniters=500)  # type: ignore[assignment]
         for t in it:
-            results.append(_run_one(t, cached[t.data_id]))
+            results.append(_run_one(t, cached[t.data_id], funding_rates))
     else:
-        payloads = [(t, cached[t.data_id]) for t in tasks]
+        payloads = [(t, cached[t.data_id], funding_rates) for t in tasks]
         with mp.get_context("spawn").Pool(n_workers) as pool:
             it = pool.imap_unordered(_grid_worker, payloads, chunksize=8)
             if show_progress:

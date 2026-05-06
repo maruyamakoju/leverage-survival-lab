@@ -43,6 +43,26 @@
 Gate 0 を通る戦略の探索が**プロジェクトの最初のボス**であり、これが見つからない場合は
 「100倍レバ含め全レバ帯で爆稼ぎは不可能」を pre-registered 通り公表して終わる。
 
+### Round 1 (2026-05-07) で判明した DSR 設計上の構造的問題
+
+第1回評価 (`scripts/gate0_eval.py`、N=200、75 cells) で全 cells の Deflated Sharpe Ratio が
+prob ≈ 0 で fail した。原因は **30日 single window の cross-sectional sample で算出する
+Sharpe が性質上低くなる** ことと、**75 cells の Bonferroni 補正で DSR 閾値が ~ Sharpe 2.4 に
+跳ね上がる** こと。
+
+この設計だと、たとえ年率 +20% を出す戦略でも DSR では叩き落とされる。
+本来 DSR は「多重試行で偶然得られた高 Sharpe を割り引く」ためのものだが、cell ごとの
+Sharpe 自体が 30d window では上がりにくく、構造的に通せない設計になっていた。
+
+**改訂案 (まだ採用していない)**:
+- 戦略を事前に 1 個固定して n_trials=1 で評価する round を別 pre-reg で切る
+- window を 90d / 180d に伸ばして Sharpe を引き出しやすくする
+- メタクライテリアの順序を変える (median return + bust rate を first gate、DSR は最後)
+
+これらの改訂は別コミットで「なぜ妥当か」を残すこと。
+**Round 1 の「全 fail」結果自体は pre-reg どおり保持する** (緩めた基準で再評価して書き換えない)。
+詳細は [stage_gate_status.md](stage_gate_status.md) の Round 1 結果を参照。
+
 ---
 
 ## Gate 1 — Cross-asset robustness
