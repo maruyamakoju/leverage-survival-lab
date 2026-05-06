@@ -63,6 +63,46 @@ Sharpe 自体が 30d window では上がりにくく、構造的に通せない�
 **Round 1 の「全 fail」結果自体は pre-reg どおり保持する** (緩めた基準で再評価して書き換えない)。
 詳細は [stage_gate_status.md](stage_gate_status.md) の Round 1 結果を参照。
 
+### Round 2 仕様 (pre-registered, 2026-05-07)
+
+Round 1 の DSR 構造的問題への対応として、以下の改訂を **別 round として** 実行する。
+Round 1 の判定 (0/75 PASS) は変更しない。
+
+**Round 2 の選択候補からの戦略事前固定**:
+- 戦略 = `trend_filtered_sma` (= bot V3.9 `trend_sma` と同一ロジック) **単独固定**
+- 理由: Round 1 の "DSR 抜き 2 条件パス cells" の 5 件中 3 件を占めて支配的だったため。
+  また cross-asset (Gate 1) preview に進む際、複数戦略を同時に試すと Bonferroni が再爆発する
+- これは Round 1 結果から戦略を1個拾った行為であり、その意味で
+  **Round 1 が探索フェーズ、Round 2 以降が confirmation フェーズ** という二段階設計に切り替える宣言
+
+**サンプル設計**:
+- window_days = **{30, 90, 180}** の 3 段階を独立に評価する
+  (Sharpe の window 期間依存性を可視化するため)
+- N = 200 ランダム窓 / 各 window-length / seed = 20260507
+- レバレッジ = {1, 2, 3, 5}x (10x 以上は Round 1 で全戦略爆損が確認済のため除外)
+- SL = {None, -0.02, -0.05}
+- TP = {None}
+- 実 Binance funding 注入 (BTC は確定、ETH/SOL は取得後)
+
+**判定**:
+- 戦略は事前 1 個固定なので **n_trials = レバ × SL = 12** で Bonferroni 適用 (戦略選択の補正は不要)
+- Gate 0 の 3 条件はそのまま:
+  - median_annual_log_return > 0
+  - deflated_sharpe_prob > 0.95 (n_trials=12 で補正)
+  - bust_rate_window_50pct < 5%
+- 3 つの window-length それぞれで判定し、**いずれか1つで合格すれば Gate 0 暫定通過**として
+  Gate 1 (cross-asset) に進む。3 つすべてで合格しなければ「期間に依存して通る/通らない」を
+  追加観察として記録する
+
+**改訂理由 (なぜ Round 1 を踏襲しないか)**:
+1. Round 1 の n_trials=75 (5 戦略 × 5 lev × 3 SL) は、戦略を選ぶ前のスクリーニング段階で
+   Bonferroni を効かせていた。これは「戦略選択の偽陽性回避」としては正しい
+2. Round 2 では戦略を pre-register で1個固定することにより、戦略選択の自由度を消去。
+   残るのはレバ×SL の感度マップで、これは同戦略のチューニング感度であり、
+   n_trials=12 のままでも Bonferroni 効果は弱まる
+3. window_days を伸ばすことで sample Sharpe が引き出しやすくなる (時間方向の集約)
+4. Round 1 の cell-level 判定は維持。Round 2 で通った戦略は Gate 1 (cross-asset) で再現性確認
+
 ---
 
 ## Gate 1 — Cross-asset robustness
