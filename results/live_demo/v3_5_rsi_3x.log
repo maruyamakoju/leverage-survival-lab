@@ -1,0 +1,43 @@
+{"ts": "2026-05-05T17:30:50.147739+00:00", "action": "START", "config": {"leverage": 3.0, "size_pct": 0.3, "sl_pct": 3.0, "tp_pct": 100.0, "strategy": "rsi", "bootstrap_candles": 200}}
+{"ts": "2026-05-05T17:31:24.968570+00:00", "action": "HEARTBEAT", "tick": 200, "price": 81352.99, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": 67.44, "candles": 200}
+{"ts": "2026-05-05T17:31:49.829485+00:00", "action": "HEARTBEAT", "tick": 400, "price": 81318.97, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": 67.44, "candles": 200}
+{"ts": "2026-05-05T17:32:20.424764+00:00", "action": "HEARTBEAT", "tick": 600, "price": 81317.65, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": 66.64, "candles": 200}
+{"ts": "2026-05-05T17:32:42.345876+00:00", "action": "HEARTBEAT", "tick": 800, "price": 81318.13, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": 66.64, "candles": 200}
+{"ts": "2026-05-05T17:33:25.408778+00:00", "action": "HEARTBEAT", "tick": 1000, "price": 81336.1, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": 62.34, "candles": 200}
+{"ts": "2026-05-05T17:34:08.554406+00:00", "action": "HEARTBEAT", "tick": 1200, "price": 81308.38, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": 60.94, "candles": 200}
+{"ts": "2026-05-05T17:34:33.318513+00:00", "action": "HEARTBEAT", "tick": 1400, "price": 81314.92, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": 60.94, "candles": 200}
+HTTP Request: POST http://127.0.0.1:8765/api/sl "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/tp "HTTP/1.1 200 OK"
+HTTP Request: POST http://127.0.0.1:8765/api/short "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T17:35:01.505327+00:00", "action": "open_short", "reason": "RSI=76.2 > 70.0 (overbought)", "price": 81330.76, "lev": 3.0, "size": 0.3, "ok": true, "result": "売建 11.065264 BTC @ $81,335.61、レバ 3倍、清算価格 $107,634.12"}
+{"ts": "2026-05-05T17:35:09.267404+00:00", "action": "HEARTBEAT", "tick": 1600, "price": 81344.06, "pos": true, "equity": 999190.0, "total": 999096.4985189144, "rsi": 76.18, "candles": 200}
+{"ts": "2026-05-05T17:35:52.819108+00:00", "action": "HEARTBEAT", "tick": 1800, "price": 81331.2, "pos": true, "equity": 999190.0, "total": 999238.7978143891, "rsi": 76.18, "candles": 200}
+{"ts": "2026-05-05T17:36:06.167747+00:00", "action": "HEARTBEAT", "tick": 2000, "price": 81309.59, "pos": true, "equity": 999190.0, "total": 999477.9181701594, "rsi": 72.16, "candles": 200}
+{"ts": "2026-05-05T17:36:26.719848+00:00", "action": "HEARTBEAT", "tick": 2200, "price": 81339.99, "pos": true, "equity": 999190.0, "total": 999141.5341435319, "rsi": 72.16, "candles": 200}
+{"ts": "2026-05-05T17:36:48.566979+00:00", "action": "HEARTBEAT", "tick": 2400, "price": 81351.01, "pos": true, "equity": 999190.0, "total": 999019.5949338796, "rsi": 72.16, "candles": 200}
+{"ts": "2026-05-05T17:37:22.180319+00:00", "action": "HEARTBEAT", "tick": 2600, "price": 81366.12, "pos": true, "equity": 999190.0, "total": 998852.3987943289, "rsi": 83.95, "candles": 200}
+{"ts": "2026-05-05T17:38:19.341177+00:00", "action": "HEARTBEAT", "tick": 2800, "price": 81343.72, "pos": true, "equity": 999190.0, "total": 999100.2607086858, "rsi": 82.42, "candles": 200}
+{"ts": "2026-05-05T17:39:05.875304+00:00", "action": "HEARTBEAT", "tick": 3000, "price": 81340.38, "pos": true, "equity": 999190.0, "total": 999137.2186905587, "rsi": 73.89, "candles": 200}
+{"ts": "2026-05-05T17:39:47.664470+00:00", "action": "HEARTBEAT", "tick": 3200, "price": 81325.76, "pos": true, "equity": 999190.0, "total": 999298.992850733, "rsi": 73.89, "candles": 200}
+{"ts": "2026-05-05T17:39:59.748198+00:00", "action": "HEARTBEAT", "tick": 3400, "price": 81284.26, "pos": true, "equity": 999190.0, "total": 999758.2013081355, "rsi": 64.53, "candles": 200}
+{"ts": "2026-05-05T17:40:02.565310+00:00", "action": "HEARTBEAT", "tick": 3600, "price": 81251.06, "pos": true, "equity": 999190.0, "total": 1000125.5680740576, "rsi": 64.53, "candles": 200}
+{"ts": "2026-05-05T17:40:18.992949+00:00", "action": "HEARTBEAT", "tick": 3800, "price": 81280.26, "pos": true, "equity": 999190.0, "total": 999802.4623642708, "rsi": 64.53, "candles": 200}
+{"ts": "2026-05-05T17:40:47.983161+00:00", "action": "HEARTBEAT", "tick": 4000, "price": 81305.86, "pos": true, "equity": 999190.0, "total": 999519.1916050055, "rsi": 64.53, "candles": 200}
+{"ts": "2026-05-05T17:41:32.221564+00:00", "action": "HEARTBEAT", "tick": 4200, "price": 81304.24, "pos": true, "equity": 999190.0, "total": 999537.1173327402, "rsi": 62.08, "candles": 200}
+{"ts": "2026-05-05T17:42:34.860442+00:00", "action": "HEARTBEAT", "tick": 4400, "price": 81310.0, "pos": true, "equity": 999190.0, "total": 999473.3814119055, "rsi": 60.77, "candles": 200}
+{"ts": "2026-05-05T17:43:45.398520+00:00", "action": "HEARTBEAT", "tick": 4600, "price": 81293.32, "pos": true, "equity": 999190.0, "total": 999657.9500159892, "rsi": 55.46, "candles": 200}
+HTTP Request: POST http://127.0.0.1:8765/api/close "HTTP/1.1 200 OK"
+{"ts": "2026-05-05T17:44:00.121409+00:00", "action": "close", "reason": "RSI 戻り 40.6 < 55 (SHORT 利確)", "price": 81293.31, "result": "売り決済 11.065264 BTC @ $81,293.31、損益 $-341.52"}
+{"ts": "2026-05-05T17:44:52.521272+00:00", "action": "HEARTBEAT", "tick": 4800, "price": 81309.99, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 40.65, "candles": 200}
+{"ts": "2026-05-05T17:45:46.819915+00:00", "action": "HEARTBEAT", "tick": 5000, "price": 81309.99, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 40.88, "candles": 200}
+{"ts": "2026-05-05T17:46:11.502138+00:00", "action": "HEARTBEAT", "tick": 5200, "price": 81278.88, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 45.77, "candles": 200}
+{"ts": "2026-05-05T17:46:51.027790+00:00", "action": "HEARTBEAT", "tick": 5400, "price": 81267.72, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 45.77, "candles": 200}
+{"ts": "2026-05-05T17:47:46.680726+00:00", "action": "HEARTBEAT", "tick": 5600, "price": 81287.63, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 37.33, "candles": 200}
+{"ts": "2026-05-05T17:48:36.891152+00:00", "action": "HEARTBEAT", "tick": 5800, "price": 81300.96, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 46.2, "candles": 200}
+{"ts": "2026-05-05T17:48:58.319071+00:00", "action": "HEARTBEAT", "tick": 6000, "price": 81339.99, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 46.2, "candles": 200}
+{"ts": "2026-05-05T17:49:34.726119+00:00", "action": "HEARTBEAT", "tick": 6200, "price": 81345.7, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 51.52, "candles": 200}
+{"ts": "2026-05-05T17:49:59.257526+00:00", "action": "HEARTBEAT", "tick": 6400, "price": 81308.84, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 51.52, "candles": 200}
+{"ts": "2026-05-05T17:50:20.004801+00:00", "action": "HEARTBEAT", "tick": 6600, "price": 81299.16, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 50.0, "candles": 200}
+{"ts": "2026-05-05T17:50:51.403018+00:00", "action": "HEARTBEAT", "tick": 6800, "price": 81325.29, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 50.0, "candles": 200}
+{"ts": "2026-05-05T17:52:12.194622+00:00", "action": "HEARTBEAT", "tick": 7000, "price": 81322.57, "pos": false, "equity": 998848.4819232314, "total": 998848.4819232314, "rsi": 44.07, "candles": 200}
+{"ts": "2026-05-05T17:52:59.104081+00:00", "action": "WS_RECONNECT", "error": "no close frame received or sent"}

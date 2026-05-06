@@ -1,0 +1,19 @@
+{"ts": "2026-05-05T17:00:43.375411+00:00", "action": "START", "config": {"leverage": 3.0, "size_pct": 0.3, "sl_pct": 3.0, "tp_pct": 100.0}}
+{"ts": "2026-05-05T17:01:18.598884+00:00", "action": "HEARTBEAT", "tick": 200, "price": 81263.45, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 1}
+{"ts": "2026-05-05T17:01:48.044665+00:00", "action": "HEARTBEAT", "tick": 400, "price": 81250.9, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 1}
+{"ts": "2026-05-05T17:02:05.712288+00:00", "action": "HEARTBEAT", "tick": 600, "price": 81245.64, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 2}
+{"ts": "2026-05-05T17:02:11.242764+00:00", "action": "HEARTBEAT", "tick": 800, "price": 81280.44, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 2}
+{"ts": "2026-05-05T17:02:27.110740+00:00", "action": "HEARTBEAT", "tick": 1000, "price": 81301.36, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 2}
+{"ts": "2026-05-05T17:02:56.310941+00:00", "action": "HEARTBEAT", "tick": 1200, "price": 81292.55, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 2}
+{"ts": "2026-05-05T17:03:27.054499+00:00", "action": "HEARTBEAT", "tick": 1400, "price": 81293.76, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 3}
+{"ts": "2026-05-05T17:03:50.899841+00:00", "action": "HEARTBEAT", "tick": 1600, "price": 81319.07, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 3}
+{"ts": "2026-05-05T17:03:57.202856+00:00", "action": "HEARTBEAT", "tick": 1800, "price": 81344.71, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 3}
+{"ts": "2026-05-05T17:04:08.090046+00:00", "action": "HEARTBEAT", "tick": 2000, "price": 81351.0, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 4}
+{"ts": "2026-05-05T17:04:17.701046+00:00", "action": "HEARTBEAT", "tick": 2200, "price": 81367.17, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 4}
+{"ts": "2026-05-05T17:04:38.162804+00:00", "action": "HEARTBEAT", "tick": 2400, "price": 81349.44, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 4}
+{"ts": "2026-05-05T17:05:08.394713+00:00", "action": "HEARTBEAT", "tick": 2600, "price": 81341.3, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 5}
+{"ts": "2026-05-05T17:05:46.136929+00:00", "action": "HEARTBEAT", "tick": 2800, "price": 81344.05, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 5}
+{"ts": "2026-05-05T17:06:37.751150+00:00", "action": "HEARTBEAT", "tick": 3000, "price": 81327.28, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 6}
+{"ts": "2026-05-05T17:07:02.974900+00:00", "action": "HEARTBEAT", "tick": 3200, "price": 81300.03, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 7}
+{"ts": "2026-05-05T17:07:30.537439+00:00", "action": "HEARTBEAT", "tick": 3400, "price": 81288.88, "pos": false, "equity": 1000000.0, "total": 1000000.0, "rsi": null, "candles": 7}
+{"ts": "2026-05-05T17:07:32.169374+00:00", "action": "WS_RECONNECT", "error": "no close frame received or sent"}
