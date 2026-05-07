@@ -144,6 +144,45 @@ trend_filtered_sma 系 (= テクニカル SMA ファミリー) が Gate 0 を通
   Round 3 ではこの制約を script 側で解消する (grid.py を変えず、Round 3 専用スクリプトで
   BacktestConfig + run_backtest を直接呼ぶ)
 
+### Round 4 仕様 (pre-registered, 2026-05-07 夜)
+
+Round 3 は FundingFlipStrategy(threshold=0.0003) で 90日 window あたり median 1 trade しか
+発火せず「機能不全」状態だった。これは threshold が実 BTC funding 分布の極端側に位置する
+ためで、戦略のメカニズム自体を否定する結果ではなかった。
+
+Round 4 では **threshold を実分布のより内側に下げて再評価する**。
+
+**pre-register 内容**:
+- 戦略 = `FundingFlipStrategy` (Round 3 と同じクラス)
+- threshold = **{0.0001, 0.0002}** の 2 値を別 cell として並列評価
+  - 0.0001 = 8h funding rate が ±0.01% (年率約 11%) 以上で発火
+  - 0.0002 = ±0.02% (年率約 22%) 以上で発火
+  - 0.0003 (= Round 3, 年率約 33%) は再評価しない (Round 3 結果を保持)
+- lookback = 24 (Round 3 と同じ)
+- window_days = 90 (Round 2 のスイートスポット)
+- N = 200, seed = 20260507
+- レバレッジ = {1, 2, 3, 5}x、SL = {None, -2%, -5%}、TP = {None}
+- BTC のみ、funding 注入
+
+**判定**:
+- 各 threshold で n_trials = 12 (lev × SL)、Bonferroni 適用
+- threshold 軸は 2 値、これも n_trials 拡張するなら全体 n_trials = 24
+  → 厳格を取り、Round 4 では n_trials = 24 で DSR 補正
+- 通った threshold があれば Gate 1 に進む
+
+**選定根拠 (なぜ 0.0001 / 0.0002 か)**:
+- Binance BTC funding rate の歴史的分布 (8h tick 4,171 個) を見ると、
+  median ≈ 0.0001、ピーク値が 0.001+ になる場面はあるが極めて稀
+- threshold 0.0003 は大半の局面で発火しない (Round 3 で確認)
+- 0.0001 は funding 平均レベル、0.0002 はその倍 — どちらも実分布の "ある程度頻繁な extreme"
+- パラメータを 2 値に絞ったのは、調整可能領域を減らして multiple-testing を抑えるため
+
+**Round 4 で fail した場合**:
+- 5 ラウンド (R1, R2, G1prev, TFround, R3) + R4 = 計 6 ラウンドで全 fail
+- これで「FundingFlip 系も threshold をどう調整しても通らない」を実証
+- 公開素材 V7 に Round 4 結果も組み込む (新パラメータ pre-reg + 評価結果)
+- 残るのは戦略族の根本的な刷新 (ボラ breakout、microstructure、ML 系など) — 別 Round 5 以降の話
+
 ---
 
 ## Gate 1 — Cross-asset robustness
