@@ -8,7 +8,8 @@
 > - Gate 1 PREVIEW (`scripts/gate1_preview.py`, BTC/ETH/SOL × trend_filtered_sma × window 90d × 12 cells): **0/12 PASS × 全アセット** (ETH/SOL は funding なし、preview 限定)
 > - Timeframe round (`scripts/gate0_round2_daily.py`, daily resample × {240,365,540} bars × 12 cells): **0/36 PASS**
 > - Round 3 (`scripts/gate0_round3.py`, FundingFlipStrategy threshold=0.0003 × 12 cells, BTC 90d): **0/12 PASS** (median trades = 1 — signal threshold が高すぎ機能不全だが pre-reg 通り保持)
-> - **総合**: SMA family + Funding family 両方 fail。現リポジトリの戦略では Gate 0 通過は不可能。
+> - Round 4 (`scripts/gate0_round4.py`, FundingFlipStrategy threshold={0.0001,0.0002} × 24 cells, BTC 90d): **0/24 PASS** (signal は発火するようになったが Sharpe 全 cell 負値、median ann log-ret 0% から負値)
+> - **総合**: SMA family + Funding family 両方 fail。**6 ラウンド累計 0/219 PASS**。現リポジトリの戦略では Gate 0 通過は不可能。
 > - 詳細は本ドキュメント末尾を参照。
 
 ## Gate 0 現状
@@ -323,9 +324,65 @@ threshold を後から下げて再評価するのは pre-reg 違反。Round 4 �
 極端性を想定していたかは曖昧。Round 4 を切るなら threshold={0.0001, 0.0002} 程度の
 よりよく発火する閾値を試す価値あり (これは新 pre-reg)。
 
+## Gate 0 — Round 4 結果 (2026-05-07, BTC, FundingFlip threshold={0.0001, 0.0002})
+
+スクリプト: `scripts/gate0_round4.py`
+Pre-reg: stage_gate.md Round 4 (commit `471631e`)
+
+### 結果: 0/24 PASS (n_trials=24 = 2 thresholds × 4 lev × 3 SL)
+
+threshold を下げると signal は発火するようになった (median trades = 1〜6 / 90d window)
+が、Sharpe は全 cell 負値、median ann log-ret は 0% から負値で推移。
+
+| Threshold | 上位 cell | Median ann log-ret | Sample Sharpe | Bust(90d) |
+|---:|---|---:|---:|---:|
+| 0.0001 | 1x SL=-5% | +0.00% | -0.26 | 6.5% |
+| 0.0002 | 1x SL=-5% | +0.00% | -0.29 | 6.5% |
+| 0.0001 | 5x no-SL | +0.00% | -1.03 | 43.2% |
+
+**観察**:
+- median total funding は cell によっては **負値** (= 受取り側) になっている。FundingFlip は
+  ショート過熱 → ロング、ロング過熱 → ショートで、funding を**受け取る**側に立つ仕組みなので、
+  funding 単独では net positive。だがそれを上回る価格逆行で SL/清算が起きて全体は負け
+- threshold=0.0001 でも median trades = 1〜3 件 / 90d 程度。lookback=24h の rolling 平均が
+  threshold を超える局面が思ったより少ない
+- SL=-2% を選ぶと median trades = 6 件まで上がるが、その分小さい SL で chop に削られて
+  median ann log-ret -9% 〜 -47% (lev 大きいほど悪化)
+
+**含意**: FundingFlip の mean-reversion 仮説は BTC 1h × 90d では成立しない。
+funding を受け取れる局面はあるが、その時の価格逆行を SL でカバーできず、戦略全体としては負け越し。
+
+## Timeframe Round (2026-05-07, BTC daily resample)
+
+スクリプト: `scripts/gate0_round2_daily.py` (1h を 1d に resample)
+window_bars = {240, 365, 540} = {8ヶ月, 1年, 1.5年}、各 N=200
+
+### 結果: 0/36 PASS
+
+| window | top cell | Median ann log-ret | Sample Sharpe | Bust |
+|---|---|---:|---:|---:|
+| 240d | 1x SL=None | +2.42% | +0.15 | 1.05% |
+| 365d | 1x SL=-5% | +2.11% | +0.06 | 12.63% |
+| 540d | 3x SL=None | +31.00% | -0.59 | 58.55% |
+
+Daily でも Sharpe は最良 +0.15。長期保有で no-SL 5x cells は完全破綻
+(365d 5x no-SL: median -2074%)。
+
+## Gate 0 Round 3 (2026-05-07, BTC, FundingFlipStrategy threshold=0.0003)
+
+スクリプト: `scripts/gate0_round3.py`
+Pre-reg: stage_gate.md Round 3 (commit `ba2f7f8`)
+パラメータ: threshold=0.0003 (年率約33% funding), lookback=24
+
+### 結果: 0/12 PASS (うち戦略機能不全)
+
+Median trades = 1 件 / 90d window。threshold=0.0003 が Binance BTC funding の実分布の
+極端側で signal がほぼ立たず事実上機能不全。**Round 4** で threshold={0.0001, 0.0002} に
+下げて再評価したが、それも 0/24 fail。
+
 ## 総合結論 (2026-05-07 終了時)
 
-5 ラウンド (Round 1, Round 2, Gate 1 preview, Timeframe round, Round 3) の結果:
+6 ラウンドの結果:
 
 | Round | 対象 | PASS / 評価 cells |
 |---|---|---:|
@@ -333,8 +390,9 @@ threshold を後から下げて再評価するのは pre-reg 違反。Round 4 �
 | Round 2 | trend_filtered_sma × {30,90,180}d × 12 cells, BTC 1h | 0 / 36 |
 | Gate 1 preview | trend_filtered_sma cross-asset (BTC funding込み, ETH/SOL なし) | 0 / 36 |
 | Timeframe round | trend_filtered_sma × daily × {240,365,540}bars | 0 / 36 |
-| Round 3 | FundingFlipStrategy 90d × 12 cells, BTC 1h | 0 / 12 |
-| **合計** | | **0 / 195** |
+| Round 3 | FundingFlipStrategy threshold=0.0003 × 12 cells, BTC 90d | 0 / 12 |
+| Round 4 | FundingFlipStrategy threshold={0.0001,0.0002} × 24 cells, BTC 90d | 0 / 24 |
+| **合計** | | **0 / 219** |
 
 **結論**:
 - 現リポジトリの 6 戦略 (random / sma_cross / rsi / bollinger / breakout / trend_filtered_sma /
