@@ -48,6 +48,27 @@
 - 閾値 ∈ [10, 20] かどうかを N=100 のシナリオで検定
 - 閾値 < 10 → H3a(コスト過小評価の可能性)、 > 20 → H3b(より頑健)
 
+**2026-05-07 脚注 (Stage-Gate Round 1+2 結果との接続)**:
+
+Stage-Gate Round 1 ([docs/stage_gate_status.md](stage_gate_status.md)、commit `e8c3389`) で
+**funding rate を実 BTC funding parquet から注入**して 6 戦略を再評価した結果、
+H3 の主張は **median return ベースでは部分的に弱まる**:
+
+- 当初 Day 1 グリッド (funding なし or 全期間 0 仮定) では「1x ですら全戦略で負の log-return」
+  だったが、これは戦略集合に `trend_filtered_sma` を含めていなかった
+- Round 1 で `trend_filtered_sma` を加えると、cost + funding 込みでも `1x SL=-5%` で
+  median annualized log-return = +12.1%、`2x SL=-5%` で +22.4% となる
+- ただし sample Sharpe (after-cost) は最良で +0.64 (Round 2, 90d window) どまり
+- DSR (Bonferroni 後) は全 cell fail。実弾運用に必要な Sharpe > 1 にも届かない
+
+**H3 の修正解釈**:
+- 「中レバで取引コストにより期待値マイナス転換」は **median return では一部反例** だが、
+  **Sharpe (リスク調整後リターン) では支持**
+- レバ 10〜20x 超で期待 log-return が負転換する点は変わらず (Round 1 の 5x, 10x 結果)
+- 実弾運用判断に用いる指標 (DSR / Sharpe / Risk of Ruin) では H3 の本質的主張は支持
+
+詳細結果: [docs/stage_gate_status.md](stage_gate_status.md) の "Round 1" 〜 "Round 4" セクション
+
 ---
 
 ## H4: ランダム戦略との同値性

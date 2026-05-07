@@ -8,14 +8,19 @@
 
 ## 絶対に守ること
 
-1. **実弾(現金)は1円も投入しない** — すべて自前シミュレータで完結
-2. **プレ・レジストレーション済の4仮説を改竄しない** — `docs/hypotheses.md` を後から都合よく書き換えない
+1. **実弾(現金)は1円も投入しない** — すべて自前シミュレータで完結。
+   実弾投入の議論が出たら必ず [docs/stage_gate.md](docs/stage_gate.md) (Stage-Gate プロトコル)
+   と [docs/stage_gate_status.md](docs/stage_gate_status.md) (進捗 snapshot) を参照。
+   現状 6 ラウンド 0/219 PASS で実弾投入は数値的に正当化されない
+2. **プレ・レジストレーション済の4仮説を改竄しない** — `docs/hypotheses.md` を後から都合よく書き換えない。
+   Stage-Gate の各 Round (R1, R2, R3, R4) も同様に pre-reg 済、結果は事後修正禁止
 3. **バイアス対策を妥協しない**:
    - look-ahead: バー終値で判断→次バー始値で約定
    - survivorship: 上場廃止銘柄も含める(暗号は影響限定)
    - multiple testing: Deflated Sharpe / Bonferroni / FDR
    - walk-forward: in-sample/out-of-sample 厳格分離
-4. **否定的結果も等しく公開する** — 「100倍レバは勝てない」が出たらそのまま出す
+4. **否定的結果も等しく公開する** — 「100倍レバは勝てない」が出たらそのまま出す。
+   Stage-Gate 6 ラウンド全 fail もそのまま `docs/blog_draft_v7_stage_gate.md` で公開
 5. **再現可能性** — Notebook/CLIから誰もが結果を再現できること
 
 ## 開発上の原則
@@ -31,12 +36,16 @@
 |-----------------------------------|-------------------------------------------|
 | `src/leverage_survival_lab/data/` | ccxt経由データ取得、Parquet I/O           |
 | `.../engine/`                     | 証拠金・清算・手数料・ファンディングモデル |
-| `.../strategies/`                 | 5戦略の Signal 生成                       |
-| `.../backtest/`                   | vectorbt連携、実験ハーネス、グリッド実行  |
+| `.../strategies/`                 | 7戦略の Signal 生成 (random/sma/rsi/bollinger/breakout/trend_filtered_sma/funding_flip) |
+| `.../backtest/`                   | vectorbt連携、実験ハーネス、グリッド実行 (funding 注入対応済) |
 | `.../analysis/`                   | 統計検定、可視化、Risk of Ruin            |
 | `.../agent/`                      | Claude Code 自律実行のフック              |
+| `.../trading/`                    | bot (V3.x シリーズ、ペーパー口座、live demo) |
 | `tests/unit/`                     | pytest単体(高速、CIで毎回実行)         |
 | `tests/integration/`              | 結合テスト(slow markerでオプトイン)    |
+| `scripts/gate0_*.py`              | Stage-Gate Round 1-4 評価スクリプト       |
+| `scripts/gate1_preview.py`        | Cross-asset preview (Gate 1)              |
+| `scripts/make_v7_figures.py`      | 公開用図表生成                            |
 
 ## コーディング規約
 
