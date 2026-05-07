@@ -32,6 +32,7 @@ from ..strategies import (
     SMACrossStrategy,
     Strategy,
     TrendFilteredSMA,
+    VolBreakoutStrategy,
 )
 from .runner import BacktestConfig, run_backtest
 
@@ -45,6 +46,9 @@ STRATEGY_FACTORIES: dict[str, Any] = {
     "bollinger":          lambda seed: BollingerStrategy(window=20, n_std=2.0),
     "breakout":           lambda seed: BreakoutStrategy(window=20),
     "trend_filtered_sma": lambda seed: TrendFilteredSMA(fast=20, slow=50, trend=200),
+    "vol_breakout":       lambda seed: VolBreakoutStrategy(
+        atr_period=14, lookback=20, k_atr=1.5, vol_lookback=100, vol_threshold=1.0,
+    ),
 }
 
 

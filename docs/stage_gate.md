@@ -183,6 +183,48 @@ Round 4 では **threshold を実分布のより内側に下げて再評価す�
 - 公開素材 V7 に Round 4 結果も組み込む (新パラメータ pre-reg + 評価結果)
 - 残るのは戦略族の根本的な刷新 (ボラ breakout、microstructure、ML 系など) — 別 Round 5 以降の話
 
+### Round 5 仕様 (pre-registered, 2026-05-07 夜)
+
+Round 1〜4 で SMA family (technical) と FundingFlip (mean-reversion of funding) が両方 fail。
+残るは「volatility-aware な breakout」戦略族 — 「トレンドはボラが平均より高い局面で出る」
+仮説に基づき、ATR (Average True Range) でボラ expansion を測定して chop を回避する。
+
+**戦略の事前固定**:
+- 戦略 = `VolBreakoutStrategy` (`src/leverage_survival_lab/strategies/vol_breakout.py`)
+- パラメータ事前固定:
+  - `atr_period=14` (ATR rolling 期間)
+  - `lookback=20` (Donchian high/low rolling 期間)
+  - `k_atr=1.5` (breakout 閾値: high + 1.5×ATR / low - 1.5×ATR)
+  - `vol_lookback=100` (ボラ平均参照期間)
+  - `vol_threshold=1.0` (現 ATR > 平均 ATR の局面でのみ参加)
+- 戦略選択の理由 (pre-reg として残す):
+  1. SMA family (テクニカル trend-following) と FundingFlip (mean-reversion) の両方が
+     既に fail。残るは「ボラ条件付き breakout」というハイブリッド枠
+  2. ATR は look-ahead 安全に計算できる古典的なボラ指標で、shift(1) で前バーまでの情報のみ使う
+  3. vol_threshold=1.0 (現 ATR > 平均) は "ボラ拡大期にのみ参加" という最小限のフィルタ。
+     1.5 や 2.0 など複数の閾値で多重比較しないために事前に 1.0 固定
+  4. パラメータ {14, 20, 1.5, 100, 1.0} は ATR-breakout の文献で標準的に使われる値
+     (Larry Williams, Curtis Faith Turtle) を踏襲。後付けチューニング回避
+
+**サンプル設計**:
+- window_days = 90 (Round 2/3/4 と同じ。同条件比較のため固定)
+- N = 200 ランダム窓 / seed = 20260507
+- レバレッジ = {1, 2, 3, 5}x、SL = {None, -0.02, -0.05}、TP = {None}
+- BTC のみ、funding 注入
+
+**判定**:
+- Bonferroni n_trials = 12 (lev × SL、戦略は事前固定)
+- Gate 0 三条件 (median ann log-ret > 0 / DSR > 0.95 / bust < 5%) はそのまま
+- 通った場合は Gate 1 (cross-asset) preview に進む
+- 全 fail なら、SMA + FundingFlip + VolBreakout の 3 family が全滅した証拠として
+  V7 公開素材に Round 5 結果も組み込み、撤退判断の最終材料とする
+
+**Round 5 で fail した場合**:
+- 7 ラウンド計 0/231 PASS
+- 残る検討 family は microstructure (tick データ要)、ML (新たな pre-reg 厳格化要)、
+  carry trade-style (複数 pair 要) — どれも実装スコープ大幅拡大
+- 8 週プロジェクト内で追加検証するか、撤退・公開で完走するかは本人判断
+
 ---
 
 ## Gate 1 — Cross-asset robustness

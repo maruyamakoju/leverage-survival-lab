@@ -10,6 +10,7 @@ from .random_strategy import RandomStrategy
 from .rsi import RSIStrategy
 from .sma_cross import SMACrossStrategy
 from .trend_filter import TrendFilteredSMA
+from .vol_breakout import VolBreakoutStrategy
 
 __all__ = [
     "BollingerStrategy",
@@ -21,4 +22,5 @@ __all__ = [
     "Signal",
     "Strategy",
     "TrendFilteredSMA",
+    "VolBreakoutStrategy",
 ]

@@ -1,10 +1,14 @@
-"""新戦略(funding flip / trend filtered)のテスト。"""
+"""新戦略(funding flip / trend filtered / vol breakout)のテスト。"""
 from __future__ import annotations
 
 import pandas as pd
 
 from leverage_survival_lab.data.synthetic import gbm_ohlcv
-from leverage_survival_lab.strategies import FundingFlipStrategy, TrendFilteredSMA
+from leverage_survival_lab.strategies import (
+    FundingFlipStrategy,
+    TrendFilteredSMA,
+    VolBreakoutStrategy,
+)
 
 
 def test_trend_filtered_sma_signal_in_range() -> None:
@@ -40,3 +44,26 @@ def test_funding_flip_threshold_triggers_short() -> None:
     sig = strat.generate(df)
     # 24 バー目以降は全部 -1 になるはず
     assert (sig.iloc[24:] == -1).all()
+
+
+def test_vol_breakout_signal_in_range() -> None:
+    df = gbm_ohlcv(n_bars=500, drift=0.0001, vol=0.02, seed=0)
+    sig = VolBreakoutStrategy(
+        atr_period=14, lookback=20, k_atr=1.5, vol_lookback=100, vol_threshold=1.0,
+    ).generate(df)
+    assert sig.isin([-1, 0, 1]).all()
+    assert len(sig) == len(df)
+
+
+def test_vol_breakout_short_data_returns_zeros() -> None:
+    """warmup に満たない短いデータでは全 0 を返す。"""
+    df = gbm_ohlcv(n_bars=50, seed=0)
+    sig = VolBreakoutStrategy(atr_period=14, lookback=20, vol_lookback=100).generate(df)
+    assert (sig == 0).all()
+
+
+def test_vol_breakout_no_signal_when_vol_threshold_unreachable() -> None:
+    """vol_threshold が極端に高ければ常にボラ expansion 条件を満たさず signal=0。"""
+    df = gbm_ohlcv(n_bars=300, drift=0.0001, vol=0.01, seed=2)
+    sig = VolBreakoutStrategy(vol_threshold=10.0).generate(df)  # 10x avg ATR は実質起きない
+    assert (sig == 0).all()
