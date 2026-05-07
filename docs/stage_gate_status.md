@@ -9,7 +9,8 @@
 > - Timeframe round (`scripts/gate0_round2_daily.py`, daily resample × {240,365,540} bars × 12 cells): **0/36 PASS**
 > - Round 3 (`scripts/gate0_round3.py`, FundingFlipStrategy threshold=0.0003 × 12 cells, BTC 90d): **0/12 PASS** (median trades = 1 — signal threshold が高すぎ機能不全だが pre-reg 通り保持)
 > - Round 4 (`scripts/gate0_round4.py`, FundingFlipStrategy threshold={0.0001,0.0002} × 24 cells, BTC 90d): **0/24 PASS** (signal は発火するようになったが Sharpe 全 cell 負値、median ann log-ret 0% から負値)
-> - **総合**: SMA family + Funding family 両方 fail。**6 ラウンド累計 0/219 PASS**。現リポジトリの戦略では Gate 0 通過は不可能。
+> - Round 5 (`scripts/gate0_round5.py`, VolBreakoutStrategy 12 cells, BTC 90d): **0/12 PASS** ただし **sample Sharpe 上限が +0.64→+0.71 に更新** (1x SL=-2%、bust 0.0%、median +15%)
+> - **総合**: SMA family + Funding family + VolBreakout family の 3 family 全 fail。**7 ラウンド累計 0/231 PASS**。現リポジトリの戦略では Gate 0 通過は不可能だが、VolBreakout が「最も Gate 0 に近い」族と判明。
 > - 詳細は本ドキュメント末尾を参照。
 
 ## Gate 0 現状
@@ -380,19 +381,60 @@ Median trades = 1 件 / 90d window。threshold=0.0003 が Binance BTC funding �
 極端側で signal がほぼ立たず事実上機能不全。**Round 4** で threshold={0.0001, 0.0002} に
 下げて再評価したが、それも 0/24 fail。
 
+## Gate 0 — Round 5 結果 (2026-05-07, BTC, VolBreakoutStrategy)
+
+スクリプト: `scripts/gate0_round5.py`
+Pre-reg: stage_gate.md Round 5 (commit `77691d8`)
+パラメータ: atr_period=14, lookback=20, k_atr=1.5, vol_lookback=100, vol_threshold=1.0
+
+### 結果: 0/12 PASS だが Sharpe 上限が更新
+
+| Lev | SL | Median ann log-ret | **Sample Sharpe** | Bust(90d) | Trades |
+|---:|---:|---:|---:|---:|---:|
+| 1x | -2% | +15.5% | **+0.71** ★ | 0.00% | 9 |
+| 1x | -5% | +18.7% | **+0.70** | 0.00% | 5 |
+| 2x | -2% | +25.0% | +0.62 | 0.00% | 9 |
+| 2x | -5% | +32.6% | +0.56 | 3.52% | 5 |
+| 3x | -2% | +25.4% | +0.52 | 1.51% | 9 |
+| 5x | None | -87.0% | -1.48 | 60.30% | 1 |
+
+★ = 7 ラウンド通じての sample Sharpe 上限 (これまで Round 2 90d 1x SL=-2% の +0.64 が上限)
+
+### 重要観察
+
+- **3 family 中で最も Gate 0 に近い**: VolBreakout 1x SL=-2% は Sharpe +0.71、bust 0.0%、
+  median +15.5%。Gate 0 三条件のうち bust < 5% と median > 0% はクリア、DSR のみ fail
+- **vol_threshold=1.0 のフィルタが効いている**: SL=-2% で trades=9, SL=None で trades=1。
+  ボラ expansion 中のみ参加して、平常時は待機する設計通りに動作
+- **5x no-SL は破綻**: 高レバ + SL なしは依然として致命的 (Sharpe -1.48, bust 60%)
+
+### Round 6 候補 (まだ実行していない)
+
+VolBreakout が最も近いので、Round 6 では **同戦略のパラメータ sweep** を別 pre-reg で
+切るのが筋:
+- `k_atr ∈ {1.0, 1.5, 2.0}` (breakout 閾値の感度)
+- `vol_threshold ∈ {0.8, 1.0, 1.2}` (ボラ expansion の閾値)
+- `lookback ∈ {10, 20, 30}` (Donchian 期間)
+
+ただし Bonferroni n_trials が増えるので、3 軸の sweep は慎重に設計が必要。
+DSR で Sharpe > 約 1.5 が要求される計算 (n_trials = 27 程度なら)。
+これは Round 5 の Sharpe +0.71 から +1.5 に飛ぶ必要があり、現実的にはチューニングだけでは
+届かない可能性大。
+
 ## 総合結論 (2026-05-07 終了時)
 
-6 ラウンドの結果:
+7 ラウンドの結果:
 
-| Round | 対象 | PASS / 評価 cells |
-|---|---|---:|
-| Round 1 | 5 strategies × 75 cells, BTC 1h, funding 込み | 0 / 75 |
-| Round 2 | trend_filtered_sma × {30,90,180}d × 12 cells, BTC 1h | 0 / 36 |
-| Gate 1 preview | trend_filtered_sma cross-asset (BTC funding込み, ETH/SOL なし) | 0 / 36 |
-| Timeframe round | trend_filtered_sma × daily × {240,365,540}bars | 0 / 36 |
-| Round 3 | FundingFlipStrategy threshold=0.0003 × 12 cells, BTC 90d | 0 / 12 |
-| Round 4 | FundingFlipStrategy threshold={0.0001,0.0002} × 24 cells, BTC 90d | 0 / 24 |
-| **合計** | | **0 / 219** |
+| Round | 対象 | PASS / 評価 cells | 最良 Sharpe |
+|---|---|---:|---:|
+| Round 1 | 5 strategies × 75 cells, BTC 1h, funding 込み | 0 / 75 | +0.36 |
+| Round 2 | trend_filtered_sma × {30,90,180}d × 12 cells, BTC 1h | 0 / 36 | +0.64 |
+| Gate 1 preview | trend_filtered_sma cross-asset | 0 / 36 | +0.63 (SOL) |
+| Timeframe round | trend_filtered_sma × daily × 3 windows | 0 / 36 | +0.15 |
+| Round 3 | FundingFlipStrategy threshold=0.0003 × 12 cells | 0 / 12 | -0.49 |
+| Round 4 | FundingFlipStrategy threshold={0.0001,0.0002} × 24 cells | 0 / 24 | -0.26 |
+| Round 5 | **VolBreakoutStrategy 12 cells, BTC 90d** | **0 / 12** | **+0.71 ★** |
+| **合計** | | **0 / 231** | — |
 
 **結論**:
 - 現リポジトリの 6 戦略 (random / sma_cross / rsi / bollinger / breakout / trend_filtered_sma /
